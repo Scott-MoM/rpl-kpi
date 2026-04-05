@@ -148,6 +148,23 @@ textarea {
   font-weight: 700;
 }
 
+.status-badge-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.status-badge-link {
+  display: inline-flex;
+  width: fit-content;
+}
+
+.status-badge-image {
+  max-width: 100%;
+  height: auto;
+}
+
 .main-panel {
   display: flex;
   flex-direction: column;

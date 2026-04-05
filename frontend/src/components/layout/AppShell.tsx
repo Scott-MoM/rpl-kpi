@@ -1,6 +1,8 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useSession } from "../../app/session";
+import { getApiOrigin } from "../../lib/api";
 
 const navigation = [
   { to: "/dashboard/kpi", label: "KPI Dashboard", roles: ["Admin", "Manager", "RPL", "ML"] },
@@ -18,18 +20,66 @@ function getGreeting() {
   return "Good evening";
 }
 
+function displayName(name?: string | null, email?: string | null) {
+  const cleanedName = String(name ?? "").trim();
+  if (cleanedName && cleanedName !== String(email ?? "").trim()) {
+    return cleanedName;
+  }
+  const localPart = String(email ?? "").split("@")[0].replace(/[._-]+/g, " ").trim();
+  if (!localPart) {
+    return "User";
+  }
+  return localPart.replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export function AppShell() {
   const { user, logout } = useSession();
   const location = useLocation();
   const visibleNavigation = navigation.filter((item) => item.roles.some((role) => user?.roles.includes(role)));
   const currentLabel = visibleNavigation.find((item) => location.pathname.startsWith(item.to))?.label ?? "Dashboard Suite";
+  const badgeTimestamp = Math.floor(Date.now() / 60000);
+  const nightlyBadgeUrl = `https://github.com/Scott-MoM/rpl-kpi/actions/workflows/nightly-beacon-sync.yml/badge.svg?branch=main&t=${badgeTimestamp}`;
+  const nightlyBadgeLink = "https://github.com/Scott-MoM/rpl-kpi/actions/workflows/nightly-beacon-sync.yml";
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    let cancelled = false;
+    const pingTargets = [window.location.origin, getApiOrigin()].filter(Boolean);
+
+    const ping = () => {
+      if (cancelled) {
+        return;
+      }
+      for (const target of pingTargets) {
+        const url = target === window.location.origin ? `${target}/` : `${target}/health`;
+        fetch(url, {
+          method: "GET",
+          cache: "no-store",
+          keepalive: true,
+          mode: "cors"
+        }).catch(() => {
+          // Ignore keep-awake failures. This should never interrupt the dashboard.
+        });
+      }
+    };
+
+    ping();
+    const intervalId = window.setInterval(ping, 10 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [user]);
 
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <section className="sidebar-block sidebar-profile">
           <span className="sidebar-section-title">Account</span>
-          <strong>{`${getGreeting()}, ${user?.name ?? "User"}`}</strong>
+          <strong>{`${getGreeting()}, ${displayName(user?.name, user?.email)}`}</strong>
           <p className="sidebar-subtext">Regional KPI Dashboard</p>
           <div className="sidebar-meta-list">
             <div className="sidebar-meta-row">
@@ -66,6 +116,16 @@ export function AppShell() {
           <div className="meta-row">
             <span className="meta-pill">{currentLabel}</span>
           </div>
+        </section>
+
+        <section className="sidebar-block">
+          <span className="sidebar-section-title">Automation</span>
+          <div className="status-badge-rail">
+            <a href={nightlyBadgeLink} target="_blank" rel="noreferrer" className="status-badge-link">
+              <img src={nightlyBadgeUrl} alt="Nightly Beacon Sync status badge" className="status-badge-image" />
+            </a>
+          </div>
+          <p className="sidebar-copy">The dashboard pings the frontend root and backend health endpoint every 10 minutes while an authenticated session is open.</p>
         </section>
 
         <div className="refresh-card">

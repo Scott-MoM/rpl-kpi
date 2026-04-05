@@ -12,8 +12,17 @@ function resolveApiBaseUrl() {
 }
 
 const API_BASE_URL = resolveApiBaseUrl();
+const API_ORIGIN = API_BASE_URL.replace(/\/api$/, "");
 const TOKEN_STORAGE_KEY = "rpl-kpi-token";
 const USER_STORAGE_KEY = "rpl-kpi-user";
+
+export function getApiBaseUrl() {
+  return API_BASE_URL;
+}
+
+export function getApiOrigin() {
+  return API_ORIGIN;
+}
 
 export function getStoredToken() {
   return window.localStorage.getItem(TOKEN_STORAGE_KEY);
