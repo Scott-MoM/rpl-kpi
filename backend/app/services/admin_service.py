@@ -34,8 +34,8 @@ class AdminService:
     _role_choices = {"RPL", "ML", "Manager", "Admin", "Funder"}
 
     def get_overview(self) -> AdminOverview:
-        client = get_supabase_client()
         admin_client = get_supabase_admin_client()
+        client = admin_client or get_supabase_client()
         if not client:
             return AdminOverview(
                 title="Admin Dashboard",
@@ -75,7 +75,7 @@ class AdminService:
         )
 
     def list_users(self) -> list[AdminUser]:
-        client = self._client()
+        client = self._admin_read_client()
         response = client.table("user_roles").select("name, email, region, roles(name)").execute()
         users_map: dict[str, dict] = {}
         for row in response.data or []:
@@ -259,7 +259,7 @@ class AdminService:
         return {"status": "deleted"}
 
     def list_audit_logs(self, search: str | None = None, action: str | None = None, limit: int = 200) -> list[AuditLogEntry]:
-        client = self._client()
+        client = self._admin_read_client()
         try:
             rows = client.table("audit_logs").select("created_at, user_email, action, region, details").order("created_at", desc=True).limit(limit).execute().data or []
         except Exception as exc:
@@ -288,7 +288,7 @@ class AdminService:
         return filtered
 
     def get_sync_performance(self) -> SyncPerformanceSummary:
-        client = self._client()
+        client = self._admin_read_client()
         try:
             rows = (
                 client.table("audit_logs")
@@ -489,6 +489,9 @@ class AdminService:
                 detail="Supabase is not configured. Set RPL_SUPABASE_URL and RPL_SUPABASE_KEY.",
             )
         return client
+
+    def _admin_read_client(self):
+        return get_supabase_admin_client() or self._client()
 
     def _admin_client(self):
         admin_client = get_supabase_admin_client()
