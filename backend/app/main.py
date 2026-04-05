@@ -1,11 +1,19 @@
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.api.router import api_router
 from app.core.config import settings
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+STATIC_DIR = PROJECT_ROOT / "static"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def create_app() -> FastAPI:
@@ -54,6 +62,7 @@ def create_app() -> FastAPI:
         return JSONResponse(status_code=200 if is_ready else 503, content=payload)
 
     app.include_router(api_router, prefix="/api")
+    app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="frontend")
     return app
 
 

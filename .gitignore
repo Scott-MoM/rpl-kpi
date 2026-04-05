@@ -1,0 +1,19 @@
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Pytest caches
+.pytest_cache/
+pytest-cache-files*/
+
+# Frontend artifacts
+frontend/node_modules/
+frontend/dist/
+frontend/package-lock.json
+
+# Backend build assets
+backend/static/
+
+# Logs and misc
+*.log

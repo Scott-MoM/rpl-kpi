@@ -170,3 +170,24 @@ If something is unclear:
 1. Take a screenshot
 2. Note the tab, metric, region, and timeframe
 3. Send this to your Admin/support contact
+
+---
+
+## 16. Prebuilding the frontend
+Before deploying, produce the frozen JavaScript/CSS bundle so the API host never runs `npm` or `tsc`.
+
+1. Install Node.js (14+ or 18+) on your build machine and install the frontend deps once:
+   ```bash
+   cd frontend
+   npm install
+   cd ..
+   ```
+2. From the repository root run:
+   ```bash
+   python scripts/prebuild_frontend.py
+   ```
+   This runs `npm run build` and copies `frontend/dist` into `backend/static`.
+3. Package or commit the generated `backend/static` directory with your backend.
+4. Deploy/ship the backend so it runs `uvicorn app.main:app`; the FastAPI app now serves the prebuilt files, so it stays under 512 MB during startup.
+
+Run the script again any time you change the frontend so the static copy stays fresh.
