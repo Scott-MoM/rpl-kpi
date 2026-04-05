@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { HashRouter, Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 
 import { AppShell } from "../components/layout/AppShell";
 import { AdminDashboardPage } from "../pages/AdminDashboardPage";
@@ -69,7 +69,7 @@ function ProtectedRoute() {
 
 export function AppRouter() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route element={<ProtectedRoute />}>
@@ -85,6 +85,6 @@ export function AppRouter() {
           </Route>
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
