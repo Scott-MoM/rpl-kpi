@@ -1,0 +1,115 @@
+import { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
+
+import { LazyPlot } from "../components/charts/LazyPlot";
+import { fetchJson } from "../lib/api";
+
+type DashboardMetric = { label: string; value: string | number };
+type DashboardSection = { title: string; metrics: DashboardMetric[] };
+type DashboardPayload = { title: string; region: string; timeframe: string; source: string; metrics: DashboardMetric[]; sections: DashboardSection[] };
+type DashboardFilterOptions = { regions: string[] };
+type FunderDetailPayload = { funder: string; region: string; timeframe: string; metrics: DashboardMetric[]; income_series: { label: string; value: number; series?: string | null }[]; rows: { id: string; label: string; date?: string | null; value?: string | number | null; metadata: Record<string, string | number | boolean | null> }[] };
+
+export function FunderDashboardPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const region = searchParams.get("region") ?? "Global";
+  const funder = searchParams.get("funder") ?? "All Funders";
+  const startDate = searchParams.get("start_date") ?? "";
+  const endDate = searchParams.get("end_date") ?? "";
+
+  const queryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("region", region);
+    params.set("funder", funder);
+    if (startDate) params.set("start_date", startDate);
+    if (endDate) params.set("end_date", endDate);
+    return params.toString();
+  }, [endDate, funder, region, startDate]);
+
+  const { data: filters } = useQuery({ queryKey: ["dashboard", "filters"], queryFn: () => fetchJson<DashboardFilterOptions>("/dashboard/filters") });
+  const { data, isLoading, error } = useQuery({ queryKey: ["dashboard", "funder", queryString], queryFn: () => fetchJson<DashboardPayload>(`/dashboard/funder?${queryString}`) });
+  const { data: details, isLoading: detailsLoading, error: detailsError } = useQuery({ queryKey: ["dashboard", "funder", "details", queryString], queryFn: () => fetchJson<FunderDetailPayload>(`/dashboard/funder/details?${queryString}`) });
+
+  function updateParam(key: string, value: string) {
+    const next = new URLSearchParams(searchParams);
+    if (value) next.set(key, value); else next.delete(key);
+    setSearchParams(next);
+  }
+
+  const seriesNames = Array.from(new Set((details?.income_series ?? []).map((item) => item.series || "Series")));
+
+  return (
+    <section className="page">
+      <div className="page-layout">
+        <aside className="control-rail">
+          <section className="control-panel">
+            <span className="badge">Filters</span>
+            <label className="field-label"><span>Region</span><select value={region} onChange={(event) => updateParam("region", event.target.value)}>{(filters?.regions ?? ["Global"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+            <label className="field-label"><span>Funder</span><input value={funder} onChange={(event) => updateParam("funder", event.target.value)} /></label>
+            <label className="field-label"><span>Start Date</span><input type="date" value={startDate} onChange={(event) => updateParam("start_date", event.target.value)} /></label>
+            <label className="field-label"><span>End Date</span><input type="date" value={endDate} onChange={(event) => updateParam("end_date", event.target.value)} /></label>
+          </section>
+          {details ? (
+            <section className="control-panel">
+              <span className="badge">Current View</span>
+              <div className="sidebar-meta-list">
+                <div className="sidebar-meta-row"><span>Funder</span><strong>{details.funder}</strong></div>
+                <div className="sidebar-meta-row"><span>Region</span><strong>{details.region}</strong></div>
+                <div className="sidebar-meta-row"><span>Timeframe</span><strong>{details.timeframe}</strong></div>
+              </div>
+            </section>
+          ) : null}
+        </aside>
+
+        <div className="content-stack">
+          <section className="hero-card">
+            <span className="badge">Funder View</span>
+            <h1>{data?.title ?? "Funder Dashboard"}</h1>
+            <p>Aggregated funder-safe metrics, funding detail, and income trend presented in a Streamlit-style control/results split.</p>
+          </section>
+
+          {isLoading ? <p className="status-panel">Loading funder dashboard...</p> : null}
+          {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}
+
+          <section className="metric-grid">
+            {(details?.metrics ?? data?.metrics ?? []).map((metric) => <article key={metric.label} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+          </section>
+
+          {(data?.sections ?? []).map((section) => (
+            <section key={section.title} className="section-card">
+              <div className="section-header"><span className="badge">{section.title}</span></div>
+              <div className="metric-grid">
+                {section.metrics.map((metric) => <article key={`${section.title}-${metric.label}`} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+              </div>
+            </section>
+          ))}
+
+          <section className="section-card">
+            <span className="badge">Income Trend</span>
+            {detailsLoading ? <p className="status-panel">Loading funder detail...</p> : null}
+            {detailsError instanceof Error ? <p className="status-panel status-error">{detailsError.message}</p> : null}
+            <div className="plot-card">
+              <LazyPlot
+                data={seriesNames.map((series) => ({ type: "scatter", mode: "lines+markers", name: series, x: (details?.income_series ?? []).filter((item) => (item.series || "Series") === series).map((item) => item.label), y: (details?.income_series ?? []).filter((item) => (item.series || "Series") === series).map((item) => item.value) }))}
+                layout={{ autosize: true, paper_bgcolor: "rgba(255,255,255,0)", plot_bgcolor: "rgba(255,255,255,0)", font: { color: "#172133" }, margin: { t: 24, r: 24, b: 48, l: 48 } }}
+                style={{ width: "100%", height: "420px" }}
+                config={{ displayModeBar: false, responsive: true }}
+              />
+            </div>
+          </section>
+
+          <section className="section-card">
+            <span className="badge">Funding Rows</span>
+            <div className="table-card">
+              <table className="data-table">
+                <thead><tr><th>Item</th><th>Date</th><th>Value</th><th>Metadata</th></tr></thead>
+                <tbody>{(details?.rows ?? []).map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </div>
+    </section>
+  );
+}

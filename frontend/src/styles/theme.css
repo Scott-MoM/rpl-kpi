@@ -1,0 +1,16 @@
+:root {
+  --bg-1: #f4f6fb;
+  --bg-2: #edf1f7;
+  --bg-3: #e6ebf3;
+  --sidebar-bg: #f7f9fc;
+  --panel: #ffffff;
+  --panel-subtle: #fbfcfe;
+  --text: #172133;
+  --muted: #5d6b82;
+  --accent-1: #ff4b4b;
+  --accent-2: #3b82f6;
+  --accent-3: #0f172a;
+  --border: #d9e0eb;
+  --border-strong: #c7d0de;
+  --shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+}

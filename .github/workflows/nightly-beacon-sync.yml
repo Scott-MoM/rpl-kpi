@@ -1,0 +1,37 @@
+name: Nightly Beacon Sync
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs daily at 00:00 UTC. Adjust if you need a different local midnight.
+    - cron: "0 0 * * *"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Beacon sync to Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BEACON_API_KEY: ${{ secrets.BEACON_API_KEY }}
+          BEACON_ACCOUNT_ID: ${{ secrets.BEACON_ACCOUNT_ID }}
+          BEACON_BASE_URL: ${{ secrets.BEACON_BASE_URL }}
+          SYNC_MAX_RETRIES: "1"
+          SYNC_RETRY_DELAY_SECONDS: "600"
+          ADMIN_ALERT_WEBHOOK_URL: ${{ secrets.ADMIN_ALERT_WEBHOOK_URL }}
+          ADMIN_NOTIFY_ON_SUCCESS: ${{ vars.ADMIN_NOTIFY_ON_SUCCESS }}
+        run: python sync_beacon_to_supabase.py

@@ -1,0 +1,35 @@
+name: Keep Streamlit Awake
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Every 4 hours (00:00, 04:00, 08:00, 12:00, 16:00, 20:00 UTC)
+    - cron: "0 */4 * * *"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Streamlit app
+        run: |
+          set -euo pipefail
+
+          BASE_URL="https://momdashboard.streamlit.app"
+          USER_AGENT="github-actions-keepalive/1.0"
+
+          for URL in "$BASE_URL/_stcore/health" "$BASE_URL/"; do
+            CODE="$(curl -A "$USER_AGENT" -sS -o /dev/null -w "%{http_code}" \
+              --max-time 60 --retry 2 --retry-delay 5 --max-redirs 10 "$URL" || true)"
+
+            if [[ "$CODE" =~ ^[23][0-9][0-9]$ ]]; then
+              echo "Ping OK for $URL (HTTP $CODE)"
+              exit 0
+            fi
+
+            echo "Ping attempt failed for $URL (HTTP $CODE)"
+          done
+
+          echo "All keep-awake ping attempts failed."
+          exit 1
