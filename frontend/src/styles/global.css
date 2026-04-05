@@ -20,6 +20,12 @@
   --panel-gradient-sidebar: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6)), rgba(63, 132, 255, 0.12);
   --panel-gradient-controls: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7)), rgba(255, 95, 122, 0.08);
   --panel-gradient-view: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.65)), rgba(0, 122, 255, 0.06);
+  --nav-hover-bg: rgba(63, 132, 255, 0.12);
+  --nav-active-bg: rgba(255, 95, 122, 0.15);
+  --nav-active-border: rgba(255, 95, 122, 0.35);
+  --table-border: rgba(17, 24, 39, 0.1);
+  --card-border-strong: rgba(63, 132, 255, 0.3);
+  --hero-banner-bg: linear-gradient(135deg, rgba(63, 132, 255, 0.9), rgba(255, 95, 122, 0.9));
   --shadow: 0 30px 60px rgba(8, 15, 30, 0.15);
 }
 
@@ -40,6 +46,15 @@
   --field-bg: rgba(3, 10, 22, 0.9);
   --field-text: #f8fbff;
   --field-placeholder: #8ea5c6;
+  --panel-gradient-sidebar: linear-gradient(180deg, rgba(7, 18, 40, 0.96), rgba(7, 18, 40, 0.8)), rgba(34, 83, 149, 0.34);
+  --panel-gradient-controls: linear-gradient(180deg, rgba(10, 20, 38, 0.95), rgba(10, 20, 38, 0.82)), rgba(121, 53, 97, 0.24);
+  --panel-gradient-view: linear-gradient(180deg, rgba(8, 17, 33, 0.96), rgba(8, 17, 33, 0.82)), rgba(24, 68, 132, 0.24);
+  --nav-hover-bg: rgba(124, 179, 255, 0.12);
+  --nav-active-bg: rgba(255, 155, 199, 0.14);
+  --nav-active-border: rgba(255, 155, 199, 0.28);
+  --table-border: rgba(255, 255, 255, 0.09);
+  --card-border-strong: rgba(124, 179, 255, 0.22);
+  --hero-banner-bg: linear-gradient(135deg, rgba(20, 69, 143, 0.95), rgba(130, 52, 102, 0.9));
   --shadow: 0 30px 60px rgba(0, 0, 0, 0.6);
 }
 
@@ -214,13 +229,13 @@ textarea {
 }
 
 .nav-link:hover {
-  background: var(--accent-soft);
+  background: var(--nav-hover-bg);
   border-color: var(--accent-soft);
 }
 
 .nav-link-active {
-  background: rgba(255, 95, 122, 0.15);
-  border-color: rgba(255, 95, 122, 0.35);
+  background: var(--nav-active-bg);
+  border-color: var(--nav-active-border);
   color: var(--accent-1);
   font-weight: 700;
 }
@@ -329,7 +344,7 @@ textarea {
   border-radius: 20px;
   padding: 0;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--card-border-strong);
   position: relative;
   overflow: hidden;
 }
@@ -423,7 +438,7 @@ textarea {
 
 .topbar.topbar-green {
   color: #fff;
-  background: linear-gradient(135deg, rgba(63, 132, 255, 0.9), rgba(255, 95, 122, 0.9));
+  background: var(--hero-banner-bg);
   border-radius: 18px;
   padding: 18px 20px;
 }
@@ -474,7 +489,7 @@ textarea {
 .data-table td {
   padding: 10px 8px;
   text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: 1px solid var(--table-border);
   vertical-align: top;
 }
 
