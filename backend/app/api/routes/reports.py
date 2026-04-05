@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 
-from app.schemas.reports import ReportResponse, SaveReportRequest, SavedReport, UpdateReportSharingRequest
-from app.services.reports_service import ReportsService
+from ...schemas.reports import ReportResponse, SaveReportRequest, SavedReport, UpdateReportSharingRequest
+from ...services.reports_service import ReportsService
 
 router = APIRouter()
 service = ReportsService()

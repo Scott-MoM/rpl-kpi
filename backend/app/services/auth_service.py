@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 
-from app.db.supabase import get_supabase_admin_client, get_supabase_client, get_supabase_server_client
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, PasswordResetRequestCreate, UserSession
+from ..db.supabase import get_supabase_admin_client, get_supabase_client, get_supabase_server_client
+from ..schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, PasswordResetRequestCreate, UserSession
 
 
 class AuthService:

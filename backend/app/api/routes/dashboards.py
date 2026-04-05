@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Query
 
-from app.schemas.dashboards import (
+from ...schemas.dashboards import (
     DashboardDetailPayload,
     DashboardFilterOptions,
     DashboardPayload,
@@ -8,7 +8,7 @@ from app.schemas.dashboards import (
     FunderDetailPayload,
     MLEventDetailPayload,
 )
-from app.services.dashboard_service import DashboardService
+from ...services.dashboard_service import DashboardService
 
 router = APIRouter()
 service = DashboardService()

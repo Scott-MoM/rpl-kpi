@@ -5,8 +5,8 @@ from typing import Any
 
 from fastapi import HTTPException, status
 
-from app.db.supabase import get_supabase_server_client
-from app.schemas.dashboards import (
+from ..db.supabase import get_supabase_server_client
+from ..schemas.dashboards import (
     DashboardDetailPayload,
     DashboardDetailRow,
     DashboardFilterOptions,

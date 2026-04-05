@@ -9,9 +9,9 @@ import sys
 
 from fastapi import HTTPException, status
 
-from app.core.config import settings
-from app.db.supabase import get_supabase_admin_client, get_supabase_client
-from app.schemas.admin import StartSyncRequest, SyncJobState
+from ..core.config import settings
+from ..db.supabase import get_supabase_admin_client, get_supabase_client
+from ..schemas.admin import StartSyncRequest, SyncJobState
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 if str(PROJECT_ROOT) not in sys.path:

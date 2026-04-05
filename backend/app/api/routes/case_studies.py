@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Query
 
-from app.schemas.case_studies import CaseStudyCreate, CaseStudyItem
-from app.services.case_studies_service import CaseStudiesService
+from ...schemas.case_studies import CaseStudyCreate, CaseStudyItem
+from ...services.case_studies_service import CaseStudiesService
 
 router = APIRouter()
 service = CaseStudiesService()

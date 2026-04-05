@@ -9,9 +9,9 @@ from typing import Any
 
 from fastapi import HTTPException, UploadFile, status
 
-from app.db.supabase import get_supabase_admin_client, get_supabase_client
-from app.core.config import settings
-from app.schemas.admin import (
+from ..db.supabase import get_supabase_admin_client, get_supabase_client
+from ..core.config import settings
+from ..schemas.admin import (
     AdminOverview,
     AuditLogEntry,
     AdminUser,

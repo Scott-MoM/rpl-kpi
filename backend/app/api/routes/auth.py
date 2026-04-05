@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException, status
 
-from app.schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, PasswordResetRequestCreate, UserSession
-from app.services.auth_service import AuthService
+from ...schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, PasswordResetRequestCreate, UserSession
+from ...services.auth_service import AuthService
 
 router = APIRouter()
 service = AuthService()

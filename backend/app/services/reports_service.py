@@ -7,8 +7,8 @@ import uuid
 
 from fastapi import HTTPException, status
 
-from app.db.supabase import get_supabase_server_client
-from app.schemas.reports import (
+from ..db.supabase import get_supabase_server_client
+from ..schemas.reports import (
     ReportAggregateRow,
     ReportResponse,
     ReportRow,

@@ -7,8 +7,8 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from app.api.router import api_router
-from app.core.config import settings
+from .api.router import api_router
+from .core.config import settings
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]

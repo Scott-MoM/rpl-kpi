@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.db.supabase import get_supabase_server_client
-from app.schemas.case_studies import CaseStudyCreate, CaseStudyItem
+from ..db.supabase import get_supabase_server_client
+from ..schemas.case_studies import CaseStudyCreate, CaseStudyItem
 
 
 class CaseStudiesService:

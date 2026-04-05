@@ -1,6 +1,6 @@
 from fastapi import APIRouter, File, Query, UploadFile
 
-from app.schemas.admin import (
+from ...schemas.admin import (
     AdminOverview,
     AuditLogEntry,
     AdminUser,
@@ -15,8 +15,8 @@ from app.schemas.admin import (
     SyncJobState,
     UpdateUserRequest,
 )
-from app.services.admin_service import AdminService
-from app.services.sync_service import SyncService
+from ...services.admin_service import AdminService
+from ...services.sync_service import SyncService
 
 router = APIRouter()
 admin_service = AdminService()
