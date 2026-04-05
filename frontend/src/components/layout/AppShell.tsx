@@ -90,7 +90,12 @@ export function AppShell() {
               <img src={nightlyBadgeUrl} alt="Nightly Beacon Sync status badge" className="status-badge-image" />
             </a>
           </div>
-          <p className="sidebar-copy">Nightly Beacon Sync is shown here. External keep-awake and status badges can be added below this badge.</p>
+          <p className="sidebar-copy">
+            See the keep-awake monitor at{" "}
+            <a href="https://w0y3n1ns.status.cron-job.org/" target="_blank" rel="noreferrer">
+              w0y3n1ns.status.cron-job.org
+            </a>
+          </p>
         </section>
 
         <div className="refresh-card">
