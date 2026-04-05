@@ -5,10 +5,14 @@ import platform
 import sys
 import traceback
 
-import uvicorn
-
-
 def main() -> None:
+    try:
+        import uvicorn
+    except BaseException:
+        print("[render_start] Failed while importing uvicorn", file=sys.stderr, flush=True)
+        traceback.print_exc()
+        raise
+
     port_value = os.getenv("PORT", "10000").strip()
     try:
         port = int(port_value)
@@ -26,15 +30,23 @@ def main() -> None:
         file=sys.stderr,
         flush=True,
     )
+    print("[render_start] Importing backend.app.main:app", file=sys.stderr, flush=True)
 
     try:
         from backend.app.main import app
-    except Exception:
-        print("[render_start] Failed to import backend.app.main:app", file=sys.stderr, flush=True)
+    except BaseException:
+        print("[render_start] Failed while importing backend.app.main:app", file=sys.stderr, flush=True)
         traceback.print_exc()
         raise
 
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print("[render_start] App import succeeded; starting uvicorn", file=sys.stderr, flush=True)
+
+    try:
+        uvicorn.run(app, host="0.0.0.0", port=port)
+    except BaseException:
+        print("[render_start] Uvicorn exited with an exception", file=sys.stderr, flush=True)
+        traceback.print_exc()
+        raise
 
 
 if __name__ == "__main__":
