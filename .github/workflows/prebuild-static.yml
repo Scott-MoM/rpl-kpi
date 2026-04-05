@@ -1,0 +1,40 @@
+name: Prebuild Static SPA
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  prebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Build frontend and copy files
+        run: bash backend/render_build.sh
+
+      - name: Commit refreshed static bundle
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add backend/static
+          if git diff --cached --quiet; then
+            echo "No static updates."
+          else
+            git commit -m "Refresh static SPA bundle"
+            git push
+          fi
