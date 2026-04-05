@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from app.db.supabase import get_supabase_client
+from app.db.supabase import get_supabase_server_client
 from app.schemas.case_studies import CaseStudyCreate, CaseStudyItem
 
 
@@ -13,7 +13,7 @@ class CaseStudiesService:
         self.local_file = self.repo_root / "case_studies.json"
 
     def list_case_studies(self, region: str) -> list[CaseStudyItem]:
-        client = get_supabase_client()
+        client = get_supabase_server_client()
         if client:
             query = client.table("case_studies").select("*").order("date_added", desc=True)
             if region and region != "Global":
@@ -27,7 +27,7 @@ class CaseStudiesService:
         return [CaseStudyItem(**self._normalize_case_study(row, fallback_id=str(index))) for index, row in enumerate(rows)]
 
     def create_case_study(self, payload: CaseStudyCreate) -> CaseStudyItem:
-        client = get_supabase_client()
+        client = get_supabase_server_client()
         item = payload.model_dump()
         if client:
             response = client.table("case_studies").insert(item).execute()

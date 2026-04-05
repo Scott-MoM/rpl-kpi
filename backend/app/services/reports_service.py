@@ -7,7 +7,7 @@ import uuid
 
 from fastapi import HTTPException, status
 
-from app.db.supabase import get_supabase_client
+from app.db.supabase import get_supabase_server_client
 from app.schemas.reports import (
     ReportAggregateRow,
     ReportResponse,
@@ -44,7 +44,7 @@ class ReportsService:
         metric: str = "metric_value",
         aggregation: str = "sum",
     ) -> ReportResponse:
-        client = get_supabase_client()
+        client = get_supabase_server_client()
         if not client:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -332,7 +332,7 @@ class ReportsService:
         return output
 
     def _client(self):
-        client = get_supabase_client()
+        client = get_supabase_server_client()
         if not client:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

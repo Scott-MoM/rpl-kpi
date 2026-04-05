@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import HTTPException, status
 
-from app.db.supabase import get_supabase_client
+from app.db.supabase import get_supabase_server_client
 from app.schemas.dashboards import (
     DashboardDetailPayload,
     DashboardDetailRow,
@@ -41,7 +41,7 @@ class DashboardService:
         return self._build_payload("ML Dashboard", region, start_date, end_date, result)
 
     def get_filter_options(self) -> DashboardFilterOptions:
-        client = get_supabase_client()
+        client = get_supabase_server_client()
         if not client:
             return DashboardFilterOptions(regions=["Global"])
 
@@ -367,7 +367,7 @@ class DashboardService:
         start_date: str | None,
         end_date: str | None,
     ) -> dict[str, Any]:
-        client = get_supabase_client()
+        client = get_supabase_server_client()
         if not client:
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
