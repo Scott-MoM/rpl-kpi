@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(dirname "$(dirname "$(realpath "$0")")")"
 
 echo "Installing backend dependencies..."
-pip install -r "$ROOT/requirements.txt"
+pip install -r "$ROOT/backend/requirements.txt"
 
 echo "Building frontend..."
 cd "$ROOT/frontend"
