@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useSession } from "../../app/session";
+import { useDashboardTheme } from "../../app/theme";
 
 const navigation = [
   { to: "/dashboard/kpi", label: "KPI Dashboard", roles: ["Admin", "Manager", "RPL", "ML"] },
@@ -12,35 +12,8 @@ const navigation = [
   { to: "/dashboard/case-studies", label: "Case Studies", roles: ["Admin", "Manager", "RPL", "ML", "Funder"] }
 ];
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 18) return "Good afternoon";
-  return "Good evening";
-}
-
-function displayName(name?: string | null, email?: string | null) {
-  const cleanedName = String(name ?? "").trim();
-  if (cleanedName && cleanedName !== String(email ?? "").trim()) {
-    return cleanedName;
-  }
-  const localPart = String(email ?? "").split("@")[0].replace(/[._-]+/g, " ").trim();
-  if (!localPart) {
-    return "User";
-  }
-  return localPart.replace(/\b\w/g, (char) => char.toUpperCase());
-}
-
-function getSavedTheme() {
-  if (typeof window === "undefined") {
-    return "light";
-  }
-  const stored = localStorage.getItem("rpl-dashboard-theme");
-  return stored === "dark" ? "dark" : "light";
-}
-
 export function AppShell() {
-  const [theme, setTheme] = useState<"light" | "dark">(getSavedTheme());
+  const { theme, toggleTheme } = useDashboardTheme();
   const { user, logout } = useSession();
   const location = useLocation();
   const visibleNavigation = navigation.filter((item) => item.roles.some((role) => user?.roles.includes(role)));
@@ -49,18 +22,31 @@ export function AppShell() {
   const nightlyBadgeUrl = `https://github.com/Scott-MoM/rpl-kpi/actions/workflows/nightly-beacon-sync.yml/badge.svg?branch=main&t=${badgeTimestamp}`;
   const nightlyBadgeLink = "https://github.com/Scott-MoM/rpl-kpi/actions/workflows/nightly-beacon-sync.yml";
 
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    if (typeof window !== "undefined") {
-      localStorage.setItem("rpl-dashboard-theme", theme);
-    }
-  }, [theme]);
+  function getGreeting() {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 18) return "Good afternoon";
+    return "Good evening";
+  }
 
-  const toggleTheme = () => setTheme((current) => (current === "light" ? "dark" : "light"));
+  function displayName(name?: string | null, email?: string | null) {
+    const cleanedName = String(name ?? "").trim();
+    if (cleanedName && cleanedName !== String(email ?? "").trim()) {
+      return cleanedName;
+    }
+    if (cleanedName) {
+      return cleanedName;
+    }
+    const localPart = String(email ?? "").split("@")[0].replace(/[._-]+/g, " ").trim();
+    if (!localPart) {
+      return "User";
+    }
+    return localPart.replace(/\b\w/g, (char) => char.toUpperCase());
+  }
 
   return (
     <div className="app-shell">
-      <aside className="sidebar-panel glass-panel">
+      <aside className="sidebar-panel glass-panel glass-panel-sidebar">
         <section className="sidebar-section">
           <span className="sidebar-section-title">Account</span>
           <strong>{`${getGreeting()}, ${displayName(user?.name, user?.email)}`}</strong>
@@ -108,7 +94,7 @@ export function AppShell() {
           </p>
         </section>
 
-        <section className="sidebar-section">
+        <section className="sidebar-section sidebar-session-section">
           <span className="sidebar-section-title">Session</span>
           <p className="sidebar-copy">Use the page controls to filter results, then switch views from the sidebar.</p>
           <button className="primary-button" type="button" onClick={logout}>
@@ -117,7 +103,7 @@ export function AppShell() {
         </section>
       </aside>
 
-      <main className="controls-column glass-panel">
+      <main className="controls-column glass-panel glass-panel-controls">
         <header className="topbar controls-topbar">
           <div className="topbar-grid">
             <div className="topbar-copy">
@@ -142,7 +128,7 @@ export function AppShell() {
         </div>
       </main>
 
-      <section className="view-column glass-panel">
+      <section className="view-column glass-panel glass-panel-view">
         <header className="topbar topbar-green">
           <div className="topbar-copy">
             <span className="eyebrow">Current View</span>

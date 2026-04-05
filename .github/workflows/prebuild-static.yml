@@ -28,6 +28,8 @@ jobs:
         run: bash backend/render_build.sh
 
       - name: Commit refreshed static bundle
+        env:
+          REPO_URL: https://x-access-token:${{ secrets.PAT_TOKEN }}@github.com/Scott-MoM/rpl-kpi.git
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -36,5 +38,5 @@ jobs:
             echo "No static updates."
           else
             git commit -m "Refresh static SPA bundle"
-            git push
+            git push "$REPO_URL" HEAD:main
           fi

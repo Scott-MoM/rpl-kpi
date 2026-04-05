@@ -1,10 +1,12 @@
 import { FormEvent, useState } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
+import { useDashboardTheme } from "../app/theme";
 import { useSession } from "../app/session";
 
 export function LoginPage() {
   const { user, login, isReady, requestPasswordReset } = useSession();
+  const { theme, toggleTheme } = useDashboardTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [email, setEmail] = useState("");
@@ -64,6 +66,12 @@ export function LoginPage() {
 
       <section className="section-card auth-card">
         <form className="stack-form" onSubmit={handleSubmit}>
+          <div className="login-theme-toggle">
+            <span className="theme-label">Theme</span>
+            <button className="secondary-button" type="button" onClick={toggleTheme}>
+              {theme === "light" ? "Switch to Dark" : "Switch to Light"}
+            </button>
+          </div>
           <label className="field-label">
             Email
             <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />

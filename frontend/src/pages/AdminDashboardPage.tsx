@@ -36,7 +36,7 @@ function AdminSection({ title, badge, defaultOpen = false, children }: AdminSect
           <span className="badge">{badge}</span>
           <h2 className="card-title">{title}</h2>
         </div>
-        <span className="admin-collapsible-arrow" aria-hidden="true">▾</span>
+        <span className="admin-collapsible-arrow" aria-hidden="true">▹</span>
       </summary>
       <div className="admin-collapsible-content">{children}</div>
     </details>
@@ -274,10 +274,32 @@ export function AdminDashboardPage() {
 
           <AdminSection title="List Users" badge="Users">
             <div className="table-card">
-              <table className="data-table">
-                <thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Region</th></tr></thead>
-                <tbody>{(users ?? []).map((entry) => <tr key={entry.email}><td>{entry.name ?? ""}</td><td>{entry.email}</td><td>{entry.role}</td><td>{entry.region ?? ""}</td></tr>)}</tbody>
-              </table>
+              {users && users.length ? (
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email</th>
+                      <th>Roles</th>
+                      <th>Region</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {users.map((entry) => (
+                      <tr key={entry.email}>
+                        <td>{entry.name ?? ""}</td>
+                        <td>{entry.email}</td>
+                        <td>{entry.role}</td>
+                        <td>{entry.region ?? ""}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="status-panel status-error">
+                  Supabase did not return any users. Verify `RPL_SUPABASE_URL`, `RPL_SUPABASE_KEY`, and `RPL_SUPABASE_SERVICE_ROLE_KEY` are set for the API service.
+                </p>
+              )}
             </div>
           </AdminSection>
 

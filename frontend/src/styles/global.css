@@ -1,17 +1,20 @@
 @import url("https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap");
 
 :root {
-  --bg-1: #e3ecff;
-  --bg-2: #f7f9ff;
-  --bg-3: #fefefe;
-  --text: #0b1a31;
-  --muted: #52607a;
+  --bg-1: #dfe7ff;
+  --bg-2: #eef2ff;
+  --bg-3: #f4f7ff;
+  --text: #0c1225;
+  --muted: #4d5780;
   --accent-1: #ff5f7a;
   --accent-2: #3f84ff;
   --accent-soft: rgba(63, 132, 255, 0.12);
-  --border: rgba(255, 255, 255, 0.4);
+  --border: rgba(255, 255, 255, 0.35);
   --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-bg: rgba(255, 255, 255, 0.75);
+  --glass-bg: rgba(255, 255, 255, 0.85);
+  --panel-gradient-sidebar: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6)), rgba(63, 132, 255, 0.12);
+  --panel-gradient-controls: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.7)), rgba(255, 95, 122, 0.08);
+  --panel-gradient-view: linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.65)), rgba(0, 122, 255, 0.06);
   --shadow: 0 30px 60px rgba(8, 15, 30, 0.15);
 }
 
@@ -79,9 +82,10 @@ textarea {
   min-height: 100vh;
   gap: 24px;
   padding: 32px;
-  background: radial-gradient(circle at top, rgba(255, 95, 122, 0.25), transparent 40%),
-    radial-gradient(circle at bottom, rgba(63, 132, 255, 0.3), transparent 45%),
-    linear-gradient(180deg, rgba(7, 18, 40, 0.6), rgba(7, 18, 40, 0.95));
+  background: radial-gradient(circle at 20% 20%, rgba(63, 132, 255, 0.25), transparent 48%),
+    radial-gradient(circle at 80% 10%, rgba(255, 95, 122, 0.35), transparent 45%),
+    radial-gradient(circle at 50% 120%, rgba(58, 201, 255, 0.18), transparent 45%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(245, 248, 255, 0.95));
 }
 
 .login-hero {
@@ -116,6 +120,21 @@ textarea {
   gap: 18px;
 }
 
+.glass-panel-sidebar {
+  background: var(--panel-gradient-sidebar);
+  border-color: rgba(63, 132, 255, 0.4);
+}
+
+.glass-panel-controls {
+  background: var(--panel-gradient-controls);
+  border-color: rgba(255, 95, 122, 0.35);
+}
+
+.glass-panel-view {
+  background: var(--panel-gradient-view);
+  border-color: rgba(0, 122, 255, 0.35);
+}
+
 .sidebar-panel {
   display: flex;
   flex-direction: column;
@@ -129,6 +148,11 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+.sidebar-session-section {
+  margin-top: auto;
+  gap: 8px;
 }
 
 .sidebar-section-title {
@@ -260,6 +284,91 @@ textarea {
   flex-wrap: wrap;
 }
 
+.theme-toggle-row {
+  align-self: flex-start;
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.controls-copy {
+  color: var(--muted);
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.view-column {
+  gap: 14px;
+}
+
+.view-content {
+  flex: 1;
+  min-height: 0;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.section-card.admin-collapsible {
+  cursor: default;
+  border-radius: 20px;
+  padding: 0;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-collapsible summary {
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 22px;
+  cursor: pointer;
+}
+
+.admin-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-collapsible-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  font-size: 1rem;
+  transform: rotate(-45deg);
+  transition: transform 0.25s ease;
+}
+
+.admin-collapsible[open] .admin-collapsible-arrow {
+  transform: rotate(45deg);
+}
+
+.admin-collapsible-content {
+  padding: 0 22px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card-title,
+.admin-collapsible summary h2 {
+  color: var(--text);
+}
+
+.card-title::after {
+  margin-top: 8px;
+}
 .meta-pill {
   padding: 6px 10px;
   border-radius: 16px;
@@ -268,13 +377,6 @@ textarea {
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.75rem;
   color: var(--text);
-}
-
-.theme-toggle-row {
-  margin-top: 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
 }
 
 .theme-label {
@@ -309,20 +411,11 @@ textarea {
   color: #fff;
 }
 
-.view-column {
-  gap: 14px;
-}
-
 .topbar.topbar-green {
   color: #fff;
   background: linear-gradient(135deg, rgba(63, 132, 255, 0.9), rgba(255, 95, 122, 0.9));
   border-radius: 18px;
   padding: 18px 20px;
-}
-
-.view-content {
-  flex: 1;
-  min-height: 0;
 }
 
 .mobile-only {
@@ -403,4 +496,14 @@ textarea {
   border: 1px solid rgba(63, 132, 255, 0.3);
   padding: 28px;
   box-shadow: 0 20px 60px rgba(7, 18, 40, 0.25);
+}
+
+.login-theme-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(63, 132, 255, 0.25);
+  margin-bottom: 16px;
 }
