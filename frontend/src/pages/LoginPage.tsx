@@ -88,6 +88,13 @@ export function LoginPage() {
           </div>
           {error ? <p className="status-panel status-error">{error}</p> : null}
           {info ? <p className="status-panel">{info}</p> : null}
+          <p className="sidebar-copy">
+            Check the keep-awake monitor on the{" "}
+            <a href="https://w0y3n1ns.status.cron-job.org/" target="_blank" rel="noreferrer">
+              Status Page
+            </a>
+            .
+          </p>
         </form>
       </section>
     </main>

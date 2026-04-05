@@ -100,10 +100,11 @@ export function AppShell() {
             </a>
           </div>
           <p className="sidebar-copy">
-            See the keep-awake monitor at{" "}
+            See the keep-awake monitor on the{" "}
             <a href="https://w0y3n1ns.status.cron-job.org/" target="_blank" rel="noreferrer">
-              w0y3n1ns.status.cron-job.org
+              Status Page
             </a>
+            .
           </p>
         </section>
 
