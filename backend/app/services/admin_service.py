@@ -10,6 +10,7 @@ from typing import Any
 from fastapi import HTTPException, UploadFile, status
 
 from app.db.supabase import get_supabase_admin_client, get_supabase_client
+from app.core.config import settings
 from app.schemas.admin import (
     AdminOverview,
     AuditLogEntry,
@@ -44,6 +45,12 @@ class AdminService:
                 last_refresh=None,
                 data_source="unconfigured",
                 sync_supported=False,
+                core_configured=not settings.missing_core_settings,
+                admin_configured=not settings.missing_admin_settings,
+                sync_configured=not settings.missing_sync_settings,
+                core_missing=settings.missing_core_settings,
+                admin_missing=settings.missing_admin_settings,
+                sync_missing=settings.missing_sync_settings,
             )
 
         user_rows = client.table("user_roles").select("email").execute().data or []
@@ -72,6 +79,12 @@ class AdminService:
             last_refresh=last_refresh,
             data_source="supabase",
             sync_supported=bool(admin_client),
+            core_configured=not settings.missing_core_settings,
+            admin_configured=not settings.missing_admin_settings,
+            sync_configured=not settings.missing_sync_settings,
+            core_missing=settings.missing_core_settings,
+            admin_missing=settings.missing_admin_settings,
+            sync_missing=settings.missing_sync_settings,
         )
 
     def list_users(self) -> list[AdminUser]:

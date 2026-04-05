@@ -8,6 +8,12 @@ class AdminOverview(BaseModel):
     last_refresh: str | None = None
     data_source: str = "unavailable"
     sync_supported: bool = False
+    core_configured: bool = False
+    admin_configured: bool = False
+    sync_configured: bool = False
+    core_missing: list[str] = []
+    admin_missing: list[str] = []
+    sync_missing: list[str] = []
 
 
 class SyncJobState(BaseModel):

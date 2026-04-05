@@ -4,7 +4,20 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "../app/session";
 import { fetchJson } from "../lib/api";
 
-type AdminOverview = { title: string; pending_password_resets: number; user_count: number; last_refresh?: string | null; data_source: string; sync_supported: boolean };
+type AdminOverview = {
+  title: string;
+  pending_password_resets: number;
+  user_count: number;
+  last_refresh?: string | null;
+  data_source: string;
+  sync_supported: boolean;
+  core_configured: boolean;
+  admin_configured: boolean;
+  sync_configured: boolean;
+  core_missing: string[];
+  admin_missing: string[];
+  sync_missing: string[];
+};
 type AdminUser = { name?: string | null; email: string; role: string; region?: string | null };
 type PendingPasswordReset = { id?: string | null; email: string; status: string; created_at?: string | null };
 type SyncJobState = { job_id: string; status: string; progress: number; message: string; user_email?: string | null; region?: string | null; started_at?: number | null; ended_at?: number | null; error?: string | null };
@@ -125,6 +138,11 @@ export function AdminDashboardPage() {
   function formatMs(value: number) { return `${(value / 1000).toFixed(1)}s`; }
 
   const auditActions = Array.from(new Set((auditLogs ?? []).map((item) => item.action))).sort();
+  const connectionChecks = [
+    { label: "Core Supabase", configured: overview?.core_configured ?? false, missing: overview?.core_missing ?? [] },
+    { label: "Admin Service Role", configured: overview?.admin_configured ?? false, missing: overview?.admin_missing ?? [] },
+    { label: "Beacon Sync", configured: overview?.sync_configured ?? false, missing: overview?.sync_missing ?? [] }
+  ];
 
   return (
     <section className="page">
@@ -174,6 +192,20 @@ export function AdminDashboardPage() {
             <article className="metric-card"><span className="metric-label">Pending Resets</span><strong className="metric-value">{overview?.pending_password_resets ?? 0}</strong></article>
             <article className="metric-card"><span className="metric-label">Last Refresh</span><strong className="metric-value">{overview?.last_refresh ?? "Unknown"}</strong></article>
             <article className="metric-card"><span className="metric-label">Sync Supported</span><strong className="metric-value">{overview?.sync_supported ? "Yes" : "No"}</strong></article>
+          </section>
+
+          <section className="section-card">
+            <span className="badge">Connection Status</span>
+            <div className="metric-grid">
+              {connectionChecks.map((check) => (
+                <article key={check.label} className="metric-card">
+                  <span className="metric-label">{check.label}</span>
+                  <strong className="metric-value">{check.configured ? "Ready" : "Missing"}</strong>
+                  <p>{check.configured ? "Configuration loaded in the backend process." : `Missing: ${check.missing.join(", ") || "Unknown setting"}`}</p>
+                </article>
+              ))}
+            </div>
+            <p>Data source: {overview?.data_source ?? "unknown"}.</p>
           </section>
 
           <section className="section-card">
