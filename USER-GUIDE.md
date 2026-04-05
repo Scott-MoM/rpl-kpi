@@ -180,13 +180,14 @@ Before deploying, produce the frozen JavaScript/CSS bundle so the API host never
    ```bash
    cd frontend
    npm install
+   npm run build
    cd ..
    ```
 2. From the repository root run:
    ```bash
    python scripts/prebuild_frontend.py
    ```
-   This runs `npm run build` and copies `frontend/dist` into `backend/static`.
+   This copies `frontend/dist` into `backend/static`.
 3. Package or commit the generated `backend/static` directory with your backend.
 4. Deploy/ship the backend so it runs `uvicorn app.main:app`; the FastAPI app now serves the prebuilt files, so it stays under 512 MB during startup.
 
