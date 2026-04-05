@@ -1,16 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+ROOT="$(dirname "$(dirname "$(realpath "$0")")")"
+
 echo "Installing backend dependencies..."
-pip install -r requirements.txt
+pip install -r "$ROOT/requirements.txt"
 
 echo "Building frontend..."
-cd frontend
+cd "$ROOT/frontend"
 npm install
 npm run build
-cd ..
 
 echo "Copying built frontend into backend/static..."
-python scripts/prebuild_frontend.py
+python "$ROOT/scripts/prebuild_frontend.py"
 
 echo "Build complete."
