@@ -1,6 +1,6 @@
 from fastapi import HTTPException, status
 
-from app.db.supabase import get_supabase_admin_client, get_supabase_client
+from app.db.supabase import get_supabase_admin_client, get_supabase_client, get_supabase_server_client
 from app.schemas.auth import ChangePasswordRequest, LoginRequest, LoginResponse, PasswordResetRequestCreate, UserSession
 
 
@@ -23,7 +23,7 @@ class AuthService:
         if not auth_response or not auth_response.user or not auth_response.session:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid login credentials.")
 
-        user = self._build_user_session(client, auth_response.user.id, str(auth_response.user.email or payload.email))
+        user = self._build_user_session(auth_response.user.id, str(auth_response.user.email or payload.email))
         return LoginResponse(user=user, access_token=auth_response.session.access_token)
 
     def change_password(self, payload: ChangePasswordRequest) -> None:
@@ -90,9 +90,15 @@ class AuthService:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid or expired access token.")
 
         email = str(user_response.user.email or "").strip().lower()
-        return self._build_user_session(client, user_response.user.id, email)
+        return self._build_user_session(user_response.user.id, email)
 
-    def _build_user_session(self, client, user_id: str, fallback_email: str) -> UserSession:
+    def _build_user_session(self, user_id: str, fallback_email: str) -> UserSession:
+        client = get_supabase_server_client()
+        if not client:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Supabase is not configured. Set RPL_SUPABASE_URL and RPL_SUPABASE_KEY.",
+            )
         try:
             role_response = (
                 client.table("user_roles")
