@@ -1,4 +1,6 @@
 from pathlib import Path
+import sys
+import traceback
 
 from fastapi import FastAPI
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
@@ -7,16 +9,31 @@ from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
-from .api.router import api_router
-from .core.config import settings
+print("[backend.app.main] module import start", file=sys.stderr, flush=True)
+
+try:
+    from .api.router import api_router
+except BaseException:
+    print("[backend.app.main] failed importing api_router", file=sys.stderr, flush=True)
+    traceback.print_exc()
+    raise
+
+try:
+    from .core.config import settings
+except BaseException:
+    print("[backend.app.main] failed importing settings", file=sys.stderr, flush=True)
+    traceback.print_exc()
+    raise
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 STATIC_DIR = PROJECT_ROOT / "static"
 STATIC_DIR.mkdir(parents=True, exist_ok=True)
+print(f"[backend.app.main] static dir={STATIC_DIR}", file=sys.stderr, flush=True)
 
 
 def create_app() -> FastAPI:
+    print("[backend.app.main] create_app start", file=sys.stderr, flush=True)
     app = FastAPI(
         title=settings.app_name,
         version="0.1.0",
@@ -61,9 +78,13 @@ def create_app() -> FastAPI:
         }
         return JSONResponse(status_code=200 if is_ready else 503, content=payload)
 
+    print("[backend.app.main] including api router", file=sys.stderr, flush=True)
     app.include_router(api_router, prefix="/api")
+    print("[backend.app.main] mounting static files", file=sys.stderr, flush=True)
     app.mount("/", StaticFiles(directory=str(STATIC_DIR), html=True), name="frontend")
+    print("[backend.app.main] create_app complete", file=sys.stderr, flush=True)
     return app
 
 
 app = create_app()
+print("[backend.app.main] module import complete", file=sys.stderr, flush=True)
