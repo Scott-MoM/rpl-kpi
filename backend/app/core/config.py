@@ -1,16 +1,17 @@
 from __future__ import annotations
 
 import json
+from typing import Annotated
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     app_name: str = "RPL KPI API"
     environment: str = "development"
-    cors_origins: list[str] = Field(default_factory=lambda: ["http://localhost:5173"])
-    allowed_hosts: list[str] = Field(default_factory=lambda: ["*"])
+    cors_origins: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:5173"])
+    allowed_hosts: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["*"])
     force_https: bool = False
     enable_api_docs: bool | None = None
     log_level: str = "INFO"
