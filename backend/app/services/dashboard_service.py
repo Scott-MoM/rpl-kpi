@@ -98,7 +98,7 @@ class DashboardService:
 
         raw_event = selected.get("raw_event") or {}
         sources = []
-        attendee_records = selected.get("attendee_records") or []
+        attendee_records = self._fetch_attendees_for_event(event_id)
         if attendee_records:
             sources.extend(attendee_records)
 
@@ -382,7 +382,6 @@ class DashboardService:
                 "people": ("beacon_people", "payload, created_at", "created_at"),
                 "organisations": ("beacon_organisations", "payload, created_at", "created_at"),
                 "events": ("beacon_events", "payload, start_date, region", "start_date"),
-                "attendees": ("beacon_event_attendees", "payload, event_id, person_id, created_at", "created_at"),
                 "payments": ("beacon_payments", "payload, payment_date", "payment_date"),
                 "grants": ("beacon_grants", "payload, close_date", "close_date"),
             },
@@ -396,7 +395,6 @@ class DashboardService:
             "ml": {
                 "people": ("beacon_people", "payload, created_at", "created_at"),
                 "events": ("beacon_events", "payload, start_date, region", "start_date"),
-                "attendees": ("beacon_event_attendees", "payload, event_id, person_id, created_at", "created_at"),
             },
         }
 
@@ -418,6 +416,37 @@ class DashboardService:
         result = self._compute_kpis(region, people, organisations, events, payments, grants, event_attendee_records)
         result["_source"] = f"supabase_{dashboard_kind}"
         return result
+
+    def _fetch_attendees_for_event(self, event_id: str) -> list[dict[str, Any]]:
+        client = get_supabase_server_client()
+        if not client:
+            return []
+
+        candidate_ids = [str(event_id).strip()]
+        normalized_id = self._entity_ref_key(event_id)
+        if normalized_id and normalized_id not in candidate_ids:
+            candidate_ids.append(normalized_id)
+
+        rows: list[dict[str, Any]] = []
+        for candidate_id in candidate_ids:
+            try:
+                chunk = (
+                    client.table("beacon_event_attendees")
+                    .select("payload, event_id, person_id, created_at")
+                    .eq("event_id", candidate_id)
+                    .limit(1000)
+                    .execute()
+                    .data
+                    or []
+                )
+            except Exception:
+                chunk = []
+            if chunk:
+                rows.extend(chunk)
+                break
+
+        event_attendee_records = self._build_event_attendee_records(rows)
+        return event_attendee_records.get(str(event_id)) or event_attendee_records.get(normalized_id) or []
 
     def _fetch_supabase_rows(
         self,
