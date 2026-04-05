@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useSession } from "../app/session";
@@ -11,8 +11,24 @@ type SyncJobState = { job_id: string; status: string; progress: number; message:
 type SyncPerformanceSummary = { latest_total_ms: number; latest_fetch_ms: number; latest_transform_ms: number; latest_upsert_ms: number; average_total_ms: number; recent_success_count: number; last_success_at?: string | null; last_sync_type?: string | null };
 type AuditLogEntry = { created_at?: string | null; user_email?: string | null; action: string; region?: string | null; details?: Record<string, unknown> | unknown[] | string | null };
 type CsvImportSummary = { people: number; organisations: number; events: number; payments: number; grants: number };
+type AdminSectionProps = { title: string; badge: string; defaultOpen?: boolean; children: ReactNode };
 
 const roleChoices = ["RPL", "ML", "Manager", "Admin", "Funder"] as const;
+
+function AdminSection({ title, badge, defaultOpen = false, children }: AdminSectionProps) {
+  return (
+    <details className="section-card admin-collapsible" open={defaultOpen}>
+      <summary className="admin-collapsible-summary">
+        <div>
+          <span className="badge">{badge}</span>
+          <h2 className="card-title">{title}</h2>
+        </div>
+        <span className="admin-collapsible-arrow" aria-hidden="true">▾</span>
+      </summary>
+      <div className="admin-collapsible-content">{children}</div>
+    </details>
+  );
+}
 
 export function AdminDashboardPage() {
   const { user } = useSession();
@@ -172,8 +188,7 @@ export function AdminDashboardPage() {
             {syncJob?.error ? <p className="status-panel status-error">{syncJob.error}</p> : null}
           </section>
 
-          <section className="section-card">
-            <span className="badge">Create User</span>
+          <AdminSection title="Add User" badge="Create User">
             <form className="filter-grid" onSubmit={handleCreateUser}>
               <label className="field-label"><span>Name</span><input value={createForm.name} onChange={(event) => setCreateForm({ ...createForm, name: event.target.value })} /></label>
               <label className="field-label"><span>Email</span><input type="email" value={createForm.email} onChange={(event) => setCreateForm({ ...createForm, email: event.target.value })} required /></label>
@@ -183,10 +198,9 @@ export function AdminDashboardPage() {
               <button className="primary-button" type="submit" disabled={createUser.isPending}>{createUser.isPending ? "Creating..." : "Create User"}</button>
             </form>
             {createUser.error instanceof Error ? <p className="status-panel status-error">{createUser.error.message}</p> : null}
-          </section>
+          </AdminSection>
 
-          <section className="section-card">
-            <span className="badge">Update User Access</span>
+          <AdminSection title="Update User Access" badge="User Access">
             <form className="filter-grid" onSubmit={handleUpdateUser}>
               <label className="field-label"><span>User</span><select value={updateForm.email} onChange={(event) => { const selectedUser = (users ?? []).find((entry) => entry.email === event.target.value); setUpdateForm({ email: event.target.value, roles: selectedUser?.role.split(",").map((value) => value.trim()).filter(Boolean) ?? ["RPL"], region: selectedUser?.region ?? "Global", reason: "", confirmed: false }); }}><option value="">Select user</option>{(users ?? []).map((entry) => <option key={entry.email} value={entry.email}>{entry.email}</option>)}</select></label>
               <label className="field-label"><span>Region</span><input value={updateForm.region} onChange={(event) => setUpdateForm({ ...updateForm, region: event.target.value })} /></label>
@@ -196,30 +210,27 @@ export function AdminDashboardPage() {
               <button className="primary-button" type="submit" disabled={updateUser.isPending || !updateForm.email}>{updateUser.isPending ? "Updating..." : "Update Access"}</button>
             </form>
             {updateUser.error instanceof Error ? <p className="status-panel status-error">{updateUser.error.message}</p> : null}
-          </section>
+          </AdminSection>
 
-          <section className="section-card">
-            <span className="badge">Password Reset</span>
+          <AdminSection title="Password Reset" badge="Password Reset">
             <form className="filter-grid" onSubmit={handleResetPassword}>
               <label className="field-label"><span>Email</span><select value={resetForm.email} onChange={(event) => setResetForm({ ...resetForm, email: event.target.value })} required><option value="">Select user</option>{(users ?? []).map((entry) => <option key={entry.email} value={entry.email}>{entry.email}</option>)}</select></label>
               <label className="field-label"><span>New Password</span><input type="password" value={resetForm.newPassword} onChange={(event) => setResetForm({ ...resetForm, newPassword: event.target.value })} required /></label>
               <button className="primary-button" type="submit" disabled={resetPassword.isPending}>{resetPassword.isPending ? "Updating..." : "Reset Password"}</button>
             </form>
             {resetPassword.error instanceof Error ? <p className="status-panel status-error">{resetPassword.error.message}</p> : null}
-          </section>
+          </AdminSection>
 
-          <section className="section-card">
-            <span className="badge">Pending Reset Requests</span>
+          <AdminSection title="Pending Reset Requests" badge="Password Requests">
             <form className="filter-grid" onSubmit={handleCompleteReset}>
               <label className="field-label"><span>Email</span><select value={tempResetForm.email} onChange={(event) => setTempResetForm({ ...tempResetForm, email: event.target.value })} required><option value="">Select request</option>{(resetRequests ?? []).map((request) => <option key={request.id ?? request.email} value={request.email}>{request.email}</option>)}</select></label>
               <label className="field-label"><span>Temporary Password</span><input type="password" value={tempResetForm.temporaryPassword} onChange={(event) => setTempResetForm({ ...tempResetForm, temporaryPassword: event.target.value })} required /></label>
               <button className="primary-button" type="submit" disabled={completeReset.isPending}>{completeReset.isPending ? "Applying..." : "Set Temporary Password"}</button>
             </form>
             {completeReset.error instanceof Error ? <p className="status-panel status-error">{completeReset.error.message}</p> : null}
-          </section>
+          </AdminSection>
 
-          <section className="section-card">
-            <span className="badge">Delete User</span>
+          <AdminSection title="Delete User" badge="Delete User">
             <form className="filter-grid" onSubmit={handleDeleteUser}>
               <label className="field-label"><span>User</span><select value={deleteForm.email} onChange={(event) => setDeleteForm({ ...deleteForm, email: event.target.value })} required><option value="">Select user</option>{(users ?? []).map((entry) => <option key={entry.email} value={entry.email}>{entry.email}</option>)}</select></label>
               <label className="field-label"><span>Reason</span><input value={deleteForm.reason} onChange={(event) => setDeleteForm({ ...deleteForm, reason: event.target.value })} required /></label>
@@ -227,17 +238,16 @@ export function AdminDashboardPage() {
               <button className="primary-button" type="submit" disabled={deleteUser.isPending}>{deleteUser.isPending ? "Deleting..." : "Delete User"}</button>
             </form>
             {deleteUser.error instanceof Error ? <p className="status-panel status-error">{deleteUser.error.message}</p> : null}
-          </section>
+          </AdminSection>
 
-          <section className="section-card">
-            <span className="badge">Users</span>
+          <AdminSection title="List Users" badge="Users">
             <div className="table-card">
               <table className="data-table">
                 <thead><tr><th>Name</th><th>Email</th><th>Roles</th><th>Region</th></tr></thead>
                 <tbody>{(users ?? []).map((entry) => <tr key={entry.email}><td>{entry.name ?? ""}</td><td>{entry.email}</td><td>{entry.role}</td><td>{entry.region ?? ""}</td></tr>)}</tbody>
               </table>
             </div>
-          </section>
+          </AdminSection>
 
           <section className="section-card">
             <span className="badge">System Audit Log</span>

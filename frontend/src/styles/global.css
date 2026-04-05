@@ -265,6 +265,47 @@ textarea {
   gap: 14px;
 }
 
+.admin-collapsible {
+  gap: 0;
+  overflow: hidden;
+}
+
+.admin-collapsible-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.admin-collapsible-summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-collapsible-summary h2 {
+  margin-top: 8px;
+}
+
+.admin-collapsible-arrow {
+  flex-shrink: 0;
+  font-size: 1rem;
+  color: var(--muted);
+  transition: transform 0.18s ease;
+}
+
+.admin-collapsible[open] .admin-collapsible-arrow {
+  transform: rotate(180deg);
+}
+
+.admin-collapsible-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #edf1f7;
+}
+
 .section-header,
 .meta-row {
   display: flex;
