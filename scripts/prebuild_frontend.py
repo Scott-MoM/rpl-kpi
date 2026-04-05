@@ -28,8 +28,9 @@ def copy_dist_to_static() -> None:
     for item in dist_dir.iterdir():
         target = STATIC_DIR / item.name
         if item.is_dir():
-            shutil.copytree(item, target)
+            shutil.copytree(item, target, dirs_exist_ok=True)
         else:
+            target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(item, target)
 
 
