@@ -20,6 +20,9 @@ from ..schemas.reports import (
 
 
 class ReportsService:
+    _fetch_batch_size = 250
+    _fetch_row_limit = 5000
+
     _dataset_config = {
         "People": {"table": "beacon_people", "date_col": "created_at", "select_cols": "payload, created_at"},
         "Organisations": {"table": "beacon_organisations", "date_col": "created_at", "select_cols": "payload, created_at"},
@@ -209,13 +212,16 @@ class ReportsService:
 
         rows = []
         offset = 0
-        batch_size = 1000
-        while True:
-            query = client.table(cfg["table"]).select(cfg["select_cols"]).range(offset, offset + batch_size - 1)
+        batch_size = self._fetch_batch_size
+        max_rows = self._fetch_row_limit
+        while offset < max_rows:
+            end_offset = min(offset + batch_size - 1, max_rows - 1)
+            query = client.table(cfg["table"]).select(cfg["select_cols"]).range(offset, end_offset)
             if start_date:
                 query = query.gte(cfg["date_col"], f"{start_date}T00:00:00")
             if end_date:
                 query = query.lte(cfg["date_col"], f"{end_date}T23:59:59")
+            query = query.order(cfg["date_col"], desc=True)
             chunk = query.execute().data or []
             rows.extend(chunk)
             if len(chunk) < batch_size:

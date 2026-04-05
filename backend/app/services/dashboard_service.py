@@ -21,6 +21,9 @@ from ..schemas.dashboards import (
 
 
 class DashboardService:
+    _fetch_batch_size = 250
+    _fetch_row_limit = 5000
+
     def list_dashboard_sections(self) -> list[DashboardSummary]:
         return [
             DashboardSummary(key="kpi", label="KPI Dashboard", description="Regional KPI overview and drill-downs."),
@@ -424,21 +427,27 @@ class DashboardService:
         date_field: str | None = None,
         start_iso: str | None = None,
         end_iso: str | None = None,
-        batch_size: int = 1000,
+        batch_size: int | None = None,
+        max_rows: int | None = None,
     ) -> list[dict[str, Any]]:
+        resolved_batch_size = batch_size or self._fetch_batch_size
+        resolved_max_rows = max_rows or self._fetch_row_limit
         rows: list[dict[str, Any]] = []
         offset = 0
-        while True:
+        while offset < resolved_max_rows:
             query = client.table(table).select(columns)
             if date_field and start_iso:
                 query = query.gte(date_field, start_iso)
             if date_field and end_iso:
                 query = query.lte(date_field, end_iso)
-            chunk = query.range(offset, offset + batch_size - 1).execute().data or []
+            if date_field:
+                query = query.order(date_field, desc=True)
+            end_offset = min(offset + resolved_batch_size - 1, resolved_max_rows - 1)
+            chunk = query.range(offset, end_offset).execute().data or []
             rows.extend(chunk)
-            if len(chunk) < batch_size:
+            if len(chunk) < resolved_batch_size:
                 break
-            offset += batch_size
+            offset += resolved_batch_size
         return rows
 
     def _rows_to_payloads(
