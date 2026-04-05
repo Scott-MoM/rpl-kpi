@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 
 import { useSession } from "../../app/session";
@@ -30,7 +31,16 @@ function displayName(name?: string | null, email?: string | null) {
   return localPart.replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
+function getSavedTheme() {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+  const stored = localStorage.getItem("rpl-dashboard-theme");
+  return stored === "dark" ? "dark" : "light";
+}
+
 export function AppShell() {
+  const [theme, setTheme] = useState<"light" | "dark">(getSavedTheme());
   const { user, logout } = useSession();
   const location = useLocation();
   const visibleNavigation = navigation.filter((item) => item.roles.some((role) => user?.roles.includes(role)));
@@ -39,10 +49,19 @@ export function AppShell() {
   const nightlyBadgeUrl = `https://github.com/Scott-MoM/rpl-kpi/actions/workflows/nightly-beacon-sync.yml/badge.svg?branch=main&t=${badgeTimestamp}`;
   const nightlyBadgeLink = "https://github.com/Scott-MoM/rpl-kpi/actions/workflows/nightly-beacon-sync.yml";
 
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    if (typeof window !== "undefined") {
+      localStorage.setItem("rpl-dashboard-theme", theme);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => setTheme((current) => (current === "light" ? "dark" : "light"));
+
   return (
     <div className="app-shell">
-      <aside className="sidebar">
-        <section className="sidebar-block sidebar-profile">
+      <aside className="sidebar-panel glass-panel">
+        <section className="sidebar-section">
           <span className="sidebar-section-title">Account</span>
           <strong>{`${getGreeting()}, ${displayName(user?.name, user?.email)}`}</strong>
           <p className="sidebar-subtext">Regional KPI Dashboard</p>
@@ -58,7 +77,7 @@ export function AppShell() {
           </div>
         </section>
 
-        <section className="sidebar-block">
+        <section className="sidebar-section">
           <span className="sidebar-section-title">View Mode</span>
           <nav className="nav-list">
             {visibleNavigation.map((item) => (
@@ -73,17 +92,7 @@ export function AppShell() {
           </nav>
         </section>
 
-        <section className="sidebar-block">
-          <span className="sidebar-section-title">Current View</span>
-          <p className="sidebar-copy">
-            The selected dashboard keeps its own controls and tables, with the sidebar acting as the persistent app rail.
-          </p>
-          <div className="meta-row">
-            <span className="meta-pill">{currentLabel}</span>
-          </div>
-        </section>
-
-        <section className="sidebar-block">
+        <section className="sidebar-section">
           <span className="sidebar-section-title">Automation</span>
           <div className="status-badge-rail">
             <a href={nightlyBadgeLink} target="_blank" rel="noreferrer" className="status-badge-link">
@@ -98,20 +107,20 @@ export function AppShell() {
           </p>
         </section>
 
-        <div className="refresh-card">
-          <span className="refresh-label">Session</span>
+        <section className="sidebar-section">
+          <span className="sidebar-section-title">Session</span>
           <p className="sidebar-copy">Use the page controls to filter results, then switch views from the sidebar.</p>
-          <button className="secondary-button" type="button" onClick={logout}>
+          <button className="primary-button" type="button" onClick={logout}>
             Logout
           </button>
-        </div>
+        </section>
       </aside>
 
-      <main className="main-panel">
-        <header className="topbar">
+      <main className="controls-column glass-panel">
+        <header className="topbar controls-topbar">
           <div className="topbar-grid">
             <div className="topbar-copy">
-              <span className="eyebrow">Dashboard</span>
+              <span className="eyebrow">Dashboard Controls</span>
               <h2 className="page-title">{currentLabel}</h2>
             </div>
             <div className="meta-row">
@@ -119,9 +128,30 @@ export function AppShell() {
               <span className="meta-pill">{user?.region ?? "Global"}</span>
             </div>
           </div>
+          <div className="theme-toggle-row">
+            <span className="theme-label">Theme</span>
+            <button className="secondary-button" type="button" onClick={toggleTheme}>
+              {theme === "light" ? "Switch to Dark" : "Switch to Light"}
+            </button>
+          </div>
         </header>
-        <Outlet />
+        <div className="controls-copy">
+          <p>Filters, toggles, and helper controls for the active view go here.</p>
+          <p>Hover over a section to see more detail.</p>
+        </div>
       </main>
+
+      <section className="view-column glass-panel">
+        <header className="topbar topbar-green">
+          <div className="topbar-copy">
+            <span className="eyebrow">Current View</span>
+            <h2 className="page-title">{currentLabel}</h2>
+          </div>
+        </header>
+        <div className="view-content">
+          <Outlet />
+        </div>
+      </section>
     </div>
   );
 }
