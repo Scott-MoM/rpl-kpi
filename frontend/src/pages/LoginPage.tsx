@@ -55,8 +55,8 @@ export function LoginPage() {
   }
 
   return (
-    <main className="page">
-      <section className="hero-card">
+    <main className="page login-page">
+      <section className="hero-card login-hero">
         <span className="badge">Login</span>
         <h1>Regional KPI Dashboard</h1>
         <p>Please sign in with your email address.</p>

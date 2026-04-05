@@ -71,6 +71,39 @@ textarea {
   padding: 20px;
 }
 
+.login-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  gap: 24px;
+  padding: 32px;
+  background: radial-gradient(circle at top, rgba(255, 95, 122, 0.25), transparent 40%),
+    radial-gradient(circle at bottom, rgba(63, 132, 255, 0.3), transparent 45%),
+    linear-gradient(180deg, rgba(7, 18, 40, 0.6), rgba(7, 18, 40, 0.95));
+}
+
+.login-hero {
+  width: min(480px, 100%);
+  text-align: center;
+  border-radius: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, rgba(255, 95, 122, 0.45), rgba(63, 132, 255, 0.35));
+  color: #fff;
+  padding: 32px 28px;
+  box-shadow: 0 20px 55px rgba(0, 0, 0, 0.45);
+}
+
+.login-hero h1 {
+  margin: 8px 0 6px;
+  font-size: 2rem;
+}
+
+.login-hero p {
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .glass-panel {
   border-radius: 22px;
   border: 1px solid var(--glass-border);
@@ -360,4 +393,14 @@ textarea {
   .sidebar-panel {
     padding: 18px;
   }
+}
+.auth-card {
+  max-width: 420px;
+  width: 100%;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 24px;
+  border: 1px solid rgba(63, 132, 255, 0.3);
+  padding: 28px;
+  box-shadow: 0 20px 60px rgba(7, 18, 40, 0.25);
 }
