@@ -20,6 +20,12 @@ type ReportRow = {
   metric_value: number;
   record_count: number;
   month?: string | null;
+  attendee_postcode?: string | null;
+  event_postcode?: string | null;
+  attendee_label?: string | null;
+  event_label?: string | null;
+  distance_miles?: number | null;
+  distance_km?: number | null;
 };
 
 type ReportAggregateRow = {
@@ -59,7 +65,7 @@ type DashboardFilterOptions = {
   regions: string[];
 };
 
-const datasetOptions = ["People", "Organisations", "Events", "Payments", "Grants"] as const;
+const datasetOptions = ["People", "Organisations", "Events", "Payments", "Grants", "Travel Distance"] as const;
 const outputOptions = ["Tabular", "Bar", "Pie", "Line", "Comparison", "UK Map"] as const;
 
 export function ReportsPage() {
@@ -97,6 +103,8 @@ export function ReportsPage() {
   }, [endDate]);
 
   const selectedDatasets = datasets.length ? datasets : ["Events", "Payments"];
+
+  const hasTravelDistanceDataset = selectedDatasets.includes("Travel Distance");
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -232,7 +240,7 @@ export function ReportsPage() {
 
   function exportCsv() {
     if (!data?.rows?.length) return;
-    const headers = ["dataset", "record_id", "date", "region", "category", "label", "status", "metric_value", "record_count", "month"];
+    const headers = ["dataset", "record_id", "date", "region", "category", "label", "status", "metric_value", "record_count", "month", "attendee_postcode", "event_postcode", "attendee_label", "event_label", "distance_miles", "distance_km"];
     const csvRows = [
       headers.join(","),
       ...data.rows.map((row) =>
@@ -284,6 +292,9 @@ export function ReportsPage() {
   const mapRows = (data?.grouped_rows ?? []).filter((row) => row.key && row.key !== "Unknown");
   const groupedLookup = new Map((data?.grouped_rows ?? []).map((row) => [row.key, row.value]));
   const comparisonDelta = baseCompare && altCompare ? (groupedLookup.get(altCompare) ?? 0) - (groupedLookup.get(baseCompare) ?? 0) : 0;
+  const travelRows = (data?.rows ?? []).filter((row) => row.dataset === "Travel Distance");
+  const averageTravelMiles = travelRows.length ? travelRows.reduce((total, row) => total + (row.distance_miles ?? row.metric_value ?? 0), 0) / travelRows.length : 0;
+  const maxTravelMiles = travelRows.length ? Math.max(...travelRows.map((row) => row.distance_miles ?? row.metric_value ?? 0)) : 0;
 
   return (
     <section className="page">
@@ -296,9 +307,9 @@ export function ReportsPage() {
               <label className="field-label"><span>Start Date</span><input type="date" value={startDateDraft} onChange={(event) => { const value = event.target.value; setStartDateDraft(value); if (!value || normalizeDateParam(value)) updateSingle("start_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("start_date", event.target.value, setStartDateDraft)} /></label>
               <label className="field-label"><span>End Date</span><input type="date" value={endDateDraft} onChange={(event) => { const value = event.target.value; setEndDateDraft(value); if (!value || normalizeDateParam(value)) updateSingle("end_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("end_date", event.target.value, setEndDateDraft)} /></label>
               <label className="field-label"><span>Output Type</span><select value={outputType} onChange={(event) => updateSingle("output_type", event.target.value)}>{outputOptions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-              <label className="field-label"><span>Group By</span><select value={groupBy} onChange={(event) => updateSingle("group_by", event.target.value)}>{(data?.available_group_by ?? ["region", "category", "status", "month", "label", "dataset"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+              <label className="field-label"><span>Group By</span><select value={groupBy} onChange={(event) => updateSingle("group_by", event.target.value)}>{(data?.available_group_by ?? ["region", "category", "status", "month", "label", "dataset", "attendee_postcode", "event_postcode", "attendee_label", "event_label"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               <label className="field-label"><span>Aggregation</span><select value={aggregation} onChange={(event) => updateSingle("aggregation", event.target.value)}>{["sum", "count", "mean"].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-              <label className="field-label"><span>Metric</span><select value={metric} onChange={(event) => updateSingle("metric", event.target.value)}>{["metric_value", "record_count"].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
+              <label className="field-label"><span>Metric</span><select value={metric} onChange={(event) => updateSingle("metric", event.target.value)}>{["metric_value", "record_count", "distance_miles", "distance_km"].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               <label className="field-label"><span>Min Value</span><input type="number" value={minValue} onChange={(event) => updateSingle("min_value", event.target.value)} /></label>
               <label className="field-label"><span>Max Value</span><input type="number" value={maxValue} onChange={(event) => updateSingle("max_value", event.target.value)} /></label>
               <label className="field-label"><span>Row Limit</span><input type="number" min="10" max="5000" step="10" value={rowLimit} onChange={(event) => updateSingle("row_limit", event.target.value)} /></label>
@@ -346,6 +357,8 @@ export function ReportsPage() {
             <StatCard label="Rows" value={data?.summary.row_count ?? 0} tone="rose" />
             <StatCard label="Datasets" value={data?.summary.dataset_count ?? 0} tone="blue" />
             <StatCard label="Total Metric" value={(data?.summary.total_metric_value ?? 0).toFixed(1)} tone="amber" />
+            {hasTravelDistanceDataset ? <StatCard label="Avg Road Miles" value={averageTravelMiles.toFixed(1)} detail="Average attendee-to-event travel distance using a driving route." tone="mint" /> : null}
+            {hasTravelDistanceDataset ? <StatCard label="Max Road Miles" value={maxTravelMiles.toFixed(1)} detail="Longest attendee-to-event driving distance in the current report." tone="blue" /> : null}
           </section>
 
           <CollapsibleSection badge="Saved" title="Saved reports">
@@ -404,11 +417,11 @@ export function ReportsPage() {
           <CollapsibleSection badge="Table" title="Tabular output" note="Expand for the raw rows.">
             <div className="table-card">
               <table className="data-table">
-                <thead><tr><th>Dataset</th><th>Date</th><th>Region</th><th>Category</th><th>Label</th><th>Status</th><th>Metric</th></tr></thead>
+                <thead><tr><th>Dataset</th><th>Date</th><th>Region</th><th>Category</th><th>Label</th>{hasTravelDistanceDataset ? <><th>Attendee Postcode</th><th>Event Postcode</th><th>Road Miles</th><th>Road Km</th></> : null}<th>Status</th><th>Metric</th></tr></thead>
                 <tbody>
                   {(data?.rows ?? []).slice(0, rowLimit).map((row) => (
                     <tr key={`${row.dataset}-${row.record_id}`}>
-                      <td>{row.dataset}</td><td>{row.date ?? ""}</td><td>{row.region}</td><td>{row.category}</td><td>{row.label}</td><td>{row.status}</td><td>{metric === "record_count" ? row.record_count : row.metric_value}</td>
+                      <td>{row.dataset}</td><td>{row.date ?? ""}</td><td>{row.region}</td><td>{row.category}</td><td>{row.label}</td>{hasTravelDistanceDataset ? <><td>{row.attendee_postcode ?? ""}</td><td>{row.event_postcode ?? ""}</td><td>{row.distance_miles?.toFixed(2) ?? ""}</td><td>{row.distance_km?.toFixed(2) ?? ""}</td></> : null}<td>{row.status}</td><td>{metric === "record_count" ? row.record_count : metric === "distance_km" ? (row.distance_km ?? row.metric_value) : metric === "distance_miles" ? (row.distance_miles ?? row.metric_value) : row.metric_value}</td>
                     </tr>
                   ))}
                 </tbody>

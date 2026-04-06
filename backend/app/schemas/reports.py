@@ -12,6 +12,12 @@ class ReportRow(BaseModel):
     metric_value: float = 0
     record_count: int = 1
     month: str | None = None
+    attendee_postcode: str | None = None
+    event_postcode: str | None = None
+    attendee_label: str | None = None
+    event_label: str | None = None
+    distance_miles: float | None = None
+    distance_km: float | None = None
 
 
 class ReportAggregateRow(BaseModel):
