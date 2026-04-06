@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { LazyPlot } from "../components/charts/LazyPlot";
 import { fetchJson } from "../lib/api";
+import { normalizeDateParam } from "../lib/dateParams";
 
 type DashboardMetric = { label: string; value: string | number };
 type DashboardSection = { title: string; metrics: DashboardMetric[] };
@@ -17,6 +18,16 @@ export function FunderDashboardPage() {
   const funder = searchParams.get("funder") ?? "All Funders";
   const startDate = searchParams.get("start_date") ?? "";
   const endDate = searchParams.get("end_date") ?? "";
+  const [startDateDraft, setStartDateDraft] = useState(startDate);
+  const [endDateDraft, setEndDateDraft] = useState(endDate);
+
+  useEffect(() => {
+    setStartDateDraft(startDate);
+  }, [startDate]);
+
+  useEffect(() => {
+    setEndDateDraft(endDate);
+  }, [endDate]);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -37,6 +48,12 @@ export function FunderDashboardPage() {
     setSearchParams(next);
   }
 
+  function commitDateParam(key: "start_date" | "end_date", value: string, setDraft: (next: string) => void) {
+    const normalized = normalizeDateParam(value);
+    setDraft(normalized);
+    updateParam(key, normalized);
+  }
+
   const seriesNames = Array.from(new Set((details?.income_series ?? []).map((item) => item.series || "Series")));
 
   return (
@@ -47,8 +64,8 @@ export function FunderDashboardPage() {
             <span className="badge">Filters</span>
             <label className="field-label"><span>Region</span><select value={region} onChange={(event) => updateParam("region", event.target.value)}>{(filters?.regions ?? ["Global"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
             <label className="field-label"><span>Funder</span><input value={funder} onChange={(event) => updateParam("funder", event.target.value)} /></label>
-            <label className="field-label"><span>Start Date</span><input type="date" value={startDate} onChange={(event) => updateParam("start_date", event.target.value)} /></label>
-            <label className="field-label"><span>End Date</span><input type="date" value={endDate} onChange={(event) => updateParam("end_date", event.target.value)} /></label>
+            <label className="field-label"><span>Start Date</span><input type="date" value={startDateDraft} onChange={(event) => { const value = event.target.value; setStartDateDraft(value); if (!value || normalizeDateParam(value)) updateParam("start_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("start_date", event.target.value, setStartDateDraft)} /></label>
+            <label className="field-label"><span>End Date</span><input type="date" value={endDateDraft} onChange={(event) => { const value = event.target.value; setEndDateDraft(value); if (!value || normalizeDateParam(value)) updateParam("end_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("end_date", event.target.value, setEndDateDraft)} /></label>
           </section>
           {details ? (
             <section className="control-panel">

@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { fetchJson } from "../lib/api";
+import { normalizeDateParam } from "../lib/dateParams";
 
 type DashboardMetric = { label: string; value: string | number; description?: string | null };
 type DashboardSection = { title: string; metrics: DashboardMetric[] };
@@ -18,6 +19,16 @@ export function MLDashboardPage() {
   const startDate = searchParams.get("start_date") ?? "";
   const endDate = searchParams.get("end_date") ?? "";
   const selectedEventId = searchParams.get("event_id") ?? "";
+  const [startDateDraft, setStartDateDraft] = useState(startDate);
+  const [endDateDraft, setEndDateDraft] = useState(endDate);
+
+  useEffect(() => {
+    setStartDateDraft(startDate);
+  }, [startDate]);
+
+  useEffect(() => {
+    setEndDateDraft(endDate);
+  }, [endDate]);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -51,6 +62,12 @@ export function MLDashboardPage() {
     setSearchParams(next);
   }
 
+  function commitDateParam(key: "start_date" | "end_date", value: string, setDraft: (next: string) => void) {
+    const normalized = normalizeDateParam(value);
+    setDraft(normalized);
+    updateParam(key, normalized);
+  }
+
   return (
     <section className="page">
       <div className="page-layout">
@@ -58,8 +75,8 @@ export function MLDashboardPage() {
           <section className="control-panel">
             <span className="badge">Filters</span>
             <label className="field-label"><span>Region</span><select value={region} onChange={(event) => updateParam("region", event.target.value)}>{(filters?.regions ?? ["Global"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-            <label className="field-label"><span>Start Date</span><input type="date" value={startDate} onChange={(event) => updateParam("start_date", event.target.value)} /></label>
-            <label className="field-label"><span>End Date</span><input type="date" value={endDate} onChange={(event) => updateParam("end_date", event.target.value)} /></label>
+            <label className="field-label"><span>Start Date</span><input type="date" value={startDateDraft} onChange={(event) => { const value = event.target.value; setStartDateDraft(value); if (!value || normalizeDateParam(value)) updateParam("start_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("start_date", event.target.value, setStartDateDraft)} /></label>
+            <label className="field-label"><span>End Date</span><input type="date" value={endDateDraft} onChange={(event) => { const value = event.target.value; setEndDateDraft(value); if (!value || normalizeDateParam(value)) updateParam("end_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("end_date", event.target.value, setEndDateDraft)} /></label>
             {(details?.rows ?? []).length ? <label className="field-label"><span>Selected Event</span><select value={effectiveEventId} onChange={(event) => updateParam("event_id", event.target.value)}>{(details?.rows ?? []).map((row) => <option key={row.id} value={row.id}>{row.label}</option>)}</select></label> : null}
           </section>
           {data ? (

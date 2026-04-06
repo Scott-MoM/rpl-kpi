@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { useSession } from "../app/session";
 import { LazyPlot } from "../components/charts/LazyPlot";
 import { fetchJson } from "../lib/api";
+import { normalizeDateParam } from "../lib/dateParams";
 
 type ReportRow = {
   dataset: string;
@@ -68,6 +69,8 @@ export function ReportsPage() {
   const region = searchParams.get("region") ?? "Global";
   const startDate = searchParams.get("start_date") ?? "";
   const endDate = searchParams.get("end_date") ?? "";
+  const [startDateDraft, setStartDateDraft] = useState(startDate);
+  const [endDateDraft, setEndDateDraft] = useState(endDate);
   const outputType = searchParams.get("output_type") ?? "Tabular";
   const datasets = searchParams.getAll("dataset");
   const groupBy = searchParams.get("group_by") ?? "region";
@@ -82,6 +85,14 @@ export function ReportsPage() {
   const compareBase = searchParams.get("compare_base") ?? "";
   const compareAlt = searchParams.get("compare_alt") ?? "";
   const rowLimit = Number(searchParams.get("row_limit") ?? "500");
+
+  useEffect(() => {
+    setStartDateDraft(startDate);
+  }, [startDate]);
+
+  useEffect(() => {
+    setEndDateDraft(endDate);
+  }, [endDate]);
 
   const selectedDatasets = datasets.length ? datasets : ["Events", "Payments"];
 
@@ -173,6 +184,12 @@ export function ReportsPage() {
     if (value) next.set(key, value);
     else next.delete(key);
     setSearchParams(next);
+  }
+
+  function commitDateParam(key: "start_date" | "end_date", value: string, setDraft: (next: string) => void) {
+    const normalized = normalizeDateParam(value);
+    setDraft(normalized);
+    updateSingle(key, normalized);
   }
 
   function updateToggle(key: string, value: string) {
@@ -274,8 +291,8 @@ export function ReportsPage() {
             <span className="badge">Report Filters</span>
             <div className="filter-grid">
               <label className="field-label"><span>Region</span><select value={region} onChange={(event) => updateSingle("region", event.target.value)}>{(filters?.regions ?? ["Global"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
-              <label className="field-label"><span>Start Date</span><input type="date" value={startDate} onChange={(event) => updateSingle("start_date", event.target.value)} /></label>
-              <label className="field-label"><span>End Date</span><input type="date" value={endDate} onChange={(event) => updateSingle("end_date", event.target.value)} /></label>
+              <label className="field-label"><span>Start Date</span><input type="date" value={startDateDraft} onChange={(event) => { const value = event.target.value; setStartDateDraft(value); if (!value || normalizeDateParam(value)) updateSingle("start_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("start_date", event.target.value, setStartDateDraft)} /></label>
+              <label className="field-label"><span>End Date</span><input type="date" value={endDateDraft} onChange={(event) => { const value = event.target.value; setEndDateDraft(value); if (!value || normalizeDateParam(value)) updateSingle("end_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("end_date", event.target.value, setEndDateDraft)} /></label>
               <label className="field-label"><span>Output Type</span><select value={outputType} onChange={(event) => updateSingle("output_type", event.target.value)}>{outputOptions.map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               <label className="field-label"><span>Group By</span><select value={groupBy} onChange={(event) => updateSingle("group_by", event.target.value)}>{(data?.available_group_by ?? ["region", "category", "status", "month", "label", "dataset"]).map((item) => <option key={item} value={item}>{item}</option>)}</select></label>
               <label className="field-label"><span>Aggregation</span><select value={aggregation} onChange={(event) => updateSingle("aggregation", event.target.value)}>{["sum", "count", "mean"].map((item) => <option key={item} value={item}>{item}</option>)}</select></label>

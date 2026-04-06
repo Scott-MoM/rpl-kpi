@@ -1,8 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { fetchJson } from "../lib/api";
+import { normalizeDateParam } from "../lib/dateParams";
 
 type DashboardMetric = {
   label: string;
@@ -55,6 +56,16 @@ export function KPIDashboardPage() {
   const startDate = searchParams.get("start_date") ?? "";
   const endDate = searchParams.get("end_date") ?? "";
   const section = (searchParams.get("section") ?? "delivery").toLowerCase();
+  const [startDateDraft, setStartDateDraft] = useState(startDate);
+  const [endDateDraft, setEndDateDraft] = useState(endDate);
+
+  useEffect(() => {
+    setStartDateDraft(startDate);
+  }, [startDate]);
+
+  useEffect(() => {
+    setEndDateDraft(endDate);
+  }, [endDate]);
 
   const queryString = useMemo(() => {
     const params = new URLSearchParams();
@@ -91,6 +102,12 @@ export function KPIDashboardPage() {
     setSearchParams(next);
   }
 
+  function commitDateParam(key: "start_date" | "end_date", value: string, setDraft: (next: string) => void) {
+    const normalized = normalizeDateParam(value);
+    setDraft(normalized);
+    updateParam(key, normalized);
+  }
+
   return (
     <section className="page">
       <div className="page-layout">
@@ -109,11 +126,33 @@ export function KPIDashboardPage() {
             </label>
             <label className="field-label">
               Start Date
-              <input type="date" value={startDate} onChange={(event) => updateParam("start_date", event.target.value)} />
+              <input
+                type="date"
+                value={startDateDraft}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setStartDateDraft(value);
+                  if (!value || normalizeDateParam(value)) {
+                    updateParam("start_date", normalizeDateParam(value));
+                  }
+                }}
+                onBlur={(event) => commitDateParam("start_date", event.target.value, setStartDateDraft)}
+              />
             </label>
             <label className="field-label">
               End Date
-              <input type="date" value={endDate} onChange={(event) => updateParam("end_date", event.target.value)} />
+              <input
+                type="date"
+                value={endDateDraft}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setEndDateDraft(value);
+                  if (!value || normalizeDateParam(value)) {
+                    updateParam("end_date", normalizeDateParam(value));
+                  }
+                }}
+                onBlur={(event) => commitDateParam("end_date", event.target.value, setEndDateDraft)}
+              />
             </label>
           </section>
 
