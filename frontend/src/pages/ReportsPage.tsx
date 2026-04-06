@@ -5,6 +5,7 @@ import { useSearchParams } from "react-router-dom";
 import { useSession } from "../app/session";
 import { LazyPlot } from "../components/charts/LazyPlot";
 import { CollapsibleSection } from "../components/layout/CollapsibleSection";
+import { StatCard } from "../components/layout/StatCard";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -335,16 +336,16 @@ export function ReportsPage() {
           <section className="hero-card">
             <span className="badge">Custom Reports</span>
             <h1>Custom Reports Dashboard</h1>
-            <p>Build reports with the left control rail and review output in charts, grouped tables, and saved report lists.</p>
+            <p>Build reports quickly, then open only the chart, grouped output, or raw table you actually need.</p>
           </section>
 
           {isLoading ? <p className="status-panel">Loading report data...</p> : null}
           {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}
 
           <section className="metric-grid">
-            <article className="metric-card"><span className="metric-label">Rows</span><strong className="metric-value">{data?.summary.row_count ?? 0}</strong></article>
-            <article className="metric-card"><span className="metric-label">Datasets</span><strong className="metric-value">{data?.summary.dataset_count ?? 0}</strong></article>
-            <article className="metric-card"><span className="metric-label">Total Metric</span><strong className="metric-value">{(data?.summary.total_metric_value ?? 0).toFixed(1)}</strong></article>
+            <StatCard label="Rows" value={data?.summary.row_count ?? 0} tone="rose" />
+            <StatCard label="Datasets" value={data?.summary.dataset_count ?? 0} tone="blue" />
+            <StatCard label="Total Metric" value={(data?.summary.total_metric_value ?? 0).toFixed(1)} tone="amber" />
           </section>
 
           <CollapsibleSection badge="Saved" title="Saved reports">

@@ -1,6 +1,7 @@
 import { FormEvent, ReactNode, useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
+import { StatCard } from "../components/layout/StatCard";
 import { useSession } from "../app/session";
 import { fetchJson } from "../lib/api";
 
@@ -36,7 +37,7 @@ function AdminSection({ title, badge, defaultOpen = false, children }: AdminSect
           <span className="badge">{badge}</span>
           <h2 className="card-title">{title}</h2>
         </div>
-        <span className="admin-collapsible-arrow" aria-hidden="true">▹</span>
+        <span className="admin-collapsible-arrow" aria-hidden="true">+</span>
       </summary>
       <div className="admin-collapsible-content">{children}</div>
     </details>
@@ -106,7 +107,8 @@ export function AdminDashboardPage() {
   const { data: syncPerformance } = useQuery({ queryKey: ["admin", "sync", "performance"], queryFn: () => fetchJson<SyncPerformanceSummary>("/admin/sync/performance") });
   const { data: auditLogs } = useQuery({
     queryKey: ["admin", "audit", auditSearch, auditAction],
-    queryFn: () => fetchJson<AuditLogEntry[]>(`/admin/audit-logs?limit=200${auditSearch ? `&search=${encodeURIComponent(auditSearch)}` : ""}${auditAction ? `&action=${encodeURIComponent(auditAction)}` : ""}`)
+    queryFn: () => fetchJson<AuditLogEntry[]>(`/admin/audit-logs?limit=200${auditSearch ? `&search=${encodeURIComponent(auditSearch)}` : ""}${auditAction ? `&action=${encodeURIComponent(auditAction)}` : ""}`),
+    enabled: isAuditLogOpen
   });
 
   useEffect(() => {
@@ -219,28 +221,30 @@ export function AdminDashboardPage() {
           <section className="hero-card">
             <span className="badge">Admin</span>
             <h1>{overview?.title ?? "Admin Dashboard"}</h1>
-            <p>Admin workflows are now presented in a denser, Streamlit-style control and output layout.</p>
+            <p>Admin tools are grouped into collapsible cards, with audit activity and supporting detail moved into focused popups.</p>
           </section>
 
           {isLoading ? <p className="status-panel">Loading admin overview...</p> : null}
           {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}
 
           <section className="metric-grid">
-            <article className="metric-card"><span className="metric-label">Users</span><strong className="metric-value">{overview?.user_count ?? 0}</strong></article>
-            <article className="metric-card"><span className="metric-label">Pending Resets</span><strong className="metric-value">{overview?.pending_password_resets ?? 0}</strong></article>
-            <article className="metric-card"><span className="metric-label">Last Refresh</span><strong className="metric-value">{overview?.last_refresh ?? "Unknown"}</strong></article>
-            <article className="metric-card"><span className="metric-label">Sync Supported</span><strong className="metric-value">{overview?.sync_supported ? "Yes" : "No"}</strong></article>
+            <StatCard label="Users" value={overview?.user_count ?? 0} detail="Current user records available to administrators." tone="rose" />
+            <StatCard label="Pending Resets" value={overview?.pending_password_resets ?? 0} detail="Password reset requests still waiting to be completed." tone="amber" />
+            <StatCard label="Last Refresh" value={overview?.last_refresh ?? "Unknown"} detail="Most recent admin data refresh reported by the API." tone="blue" />
+            <StatCard label="Sync Supported" value={overview?.sync_supported ? "Yes" : "No"} detail="Whether this deployment can run the Beacon sync workflow." tone="mint" />
           </section>
 
           <section className="section-card">
             <span className="badge">Connection Status</span>
             <div className="metric-grid">
               {connectionChecks.map((check) => (
-                <article key={check.label} className="metric-card">
-                  <span className="metric-label">{check.label}</span>
-                  <strong className="metric-value">{check.configured ? "Ready" : "Missing"}</strong>
-                  <p>{check.configured ? "Configuration loaded in the backend process." : `Missing: ${check.missing.join(", ") || "Unknown setting"}`}</p>
-                </article>
+                <StatCard
+                  key={check.label}
+                  label={check.label}
+                  value={check.configured ? "Ready" : "Missing"}
+                  detail={check.configured ? "Configuration loaded in the backend process." : `Missing: ${check.missing.join(", ") || "Unknown setting"}`}
+                  tone={check.configured ? "mint" : "amber"}
+                />
               ))}
             </div>
             <p>Data source: {overview?.data_source ?? "unknown"}.</p>
@@ -249,10 +253,10 @@ export function AdminDashboardPage() {
           <section className="section-card">
             <span className="badge">Sync Performance</span>
             <div className="metric-grid">
-              <article className="metric-card"><span className="metric-label">Total</span><strong className="metric-value">{formatMs(syncPerformance?.latest_total_ms ?? 0)}</strong></article>
-              <article className="metric-card"><span className="metric-label">Fetch</span><strong className="metric-value">{formatMs(syncPerformance?.latest_fetch_ms ?? 0)}</strong></article>
-              <article className="metric-card"><span className="metric-label">Transform</span><strong className="metric-value">{formatMs(syncPerformance?.latest_transform_ms ?? 0)}</strong></article>
-              <article className="metric-card"><span className="metric-label">Upsert</span><strong className="metric-value">{formatMs(syncPerformance?.latest_upsert_ms ?? 0)}</strong></article>
+              <StatCard label="Total" value={formatMs(syncPerformance?.latest_total_ms ?? 0)} detail="End-to-end duration for the latest successful sync." tone="rose" />
+              <StatCard label="Fetch" value={formatMs(syncPerformance?.latest_fetch_ms ?? 0)} detail="Beacon extraction time." tone="blue" />
+              <StatCard label="Transform" value={formatMs(syncPerformance?.latest_transform_ms ?? 0)} detail="Data shaping and enrichment time." tone="amber" />
+              <StatCard label="Upsert" value={formatMs(syncPerformance?.latest_upsert_ms ?? 0)} detail="Supabase write time." tone="mint" />
             </div>
             {syncPerformance?.recent_success_count ? <p>Average total over last {syncPerformance.recent_success_count} successful syncs: {formatMs(syncPerformance.average_total_ms)}.{syncPerformance.last_sync_type ? ` Latest type: ${syncPerformance.last_sync_type}.` : ""}</p> : null}
             {syncJob?.error ? <p className="status-panel status-error">{syncJob.error}</p> : null}
@@ -346,7 +350,7 @@ export function AdminDashboardPage() {
             <p>Open the audit log in a focused view with search and readable detail formatting.</p>
             <div className="meta-row">
               <button className="primary-button" type="button" onClick={() => setIsAuditLogOpen(true)}>View Audit Log</button>
-              <span className="meta-pill">{auditLogs?.length ?? 0} entries loaded</span>
+              <span className="meta-pill">{isAuditLogOpen ? `${auditLogs?.length ?? 0} entries loaded` : "Load on demand"}</span>
             </div>
           </section>
         </div>

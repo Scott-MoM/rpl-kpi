@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { CollapsibleSection } from "../components/layout/CollapsibleSection";
+import { StatCard } from "../components/layout/StatCard";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -51,7 +52,7 @@ type DashboardDetailPayload = {
 const sectionOptions = ["governance", "partnerships", "delivery", "income"] as const;
 
 export function KPIDashboardPage() {
-  const [selectedRowId, setSelectedRowId] = useState("");
+  const [selectedRow, setSelectedRow] = useState<DashboardDetailRow | null>(null);
   const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const region = searchParams.get("region") ?? "Global";
@@ -95,8 +96,6 @@ export function KPIDashboardPage() {
     queryFn: () => fetchJson<DashboardDetailPayload>(detailPath),
     enabled: detailsEnabled
   });
-
-  const selectedRow = (details?.rows ?? []).find((row) => row.id === selectedRowId) ?? (details?.rows ?? [])[0] ?? null;
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -194,7 +193,7 @@ export function KPIDashboardPage() {
           <section className="hero-card">
             <span className="badge">Live KPI Overview</span>
             <h1>{data?.title ?? "KPI Dashboard"}</h1>
-            <p>Regional KPI summary rebuilt against the FastAPI service layer with section drill-downs and table detail.</p>
+            <p>Regional KPI summaries first, with drill-down detail available when you open it.</p>
           </section>
 
           {isLoading ? <p className="status-panel">Loading dashboard data...</p> : null}
@@ -202,11 +201,7 @@ export function KPIDashboardPage() {
 
           <section className="metric-grid">
             {(data?.metrics ?? []).map((metric) => (
-              <article key={metric.label} className="metric-card">
-                <span className="metric-label">{metric.label}</span>
-                <strong className="metric-value">{metric.value}</strong>
-                {metric.description ? <p>{metric.description}</p> : null}
-              </article>
+              <StatCard key={metric.label} label={metric.label} value={metric.value} detail={metric.description} tone="rose" />
             ))}
           </section>
 
@@ -214,11 +209,7 @@ export function KPIDashboardPage() {
             <CollapsibleSection key={item.title} badge={item.title} title={item.title} defaultOpen={item.title.toLowerCase() === section}>
               <div className="metric-grid">
                 {item.metrics.map((metric) => (
-                  <article key={`${item.title}-${metric.label}`} className="metric-card">
-                    <span className="metric-label">{metric.label}</span>
-                    <strong className="metric-value">{metric.value}</strong>
-                    {metric.description ? <p>{metric.description}</p> : null}
-                  </article>
+                  <StatCard key={`${item.title}-${metric.label}`} label={metric.label} value={metric.value} detail={metric.description} tone="blue" />
                 ))}
               </div>
             </CollapsibleSection>
@@ -229,8 +220,8 @@ export function KPIDashboardPage() {
             {detailsError instanceof Error ? <p className="status-panel status-error">{detailsError.message}</p> : null}
             {(details?.rows ?? []).length ? (
               <label className="field-label">
-                Select row
-                <select value={selectedRow?.id ?? ""} onChange={(event) => setSelectedRowId(event.target.value)}>
+                Focus row
+                <select value={selectedRow?.id ?? ""} onChange={(event) => setSelectedRow((details?.rows ?? []).find((row) => row.id === event.target.value) ?? null)}>
                   {(details?.rows ?? []).map((row) => (
                     <option key={row.id} value={row.id}>
                       {row.label}
@@ -252,7 +243,7 @@ export function KPIDashboardPage() {
                 </thead>
                 <tbody>
                   {(details?.rows ?? []).map((row) => (
-                    <tr key={row.id}>
+                    <tr key={row.id} className="interactive-row" onClick={() => setSelectedRow(row)}>
                       <td>{row.label}</td>
                       <td>{row.date ?? ""}</td>
                       <td>{row.region ?? ""}</td>
@@ -268,32 +259,7 @@ export function KPIDashboardPage() {
                 </tbody>
               </table>
             </div>
-            {selectedRow ? (
-              <div className="table-card">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Selected Item</th>
-                      <th>Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr><td>Label</td><td>{selectedRow.label}</td></tr>
-                    <tr><td>Date</td><td>{selectedRow.date ?? ""}</td></tr>
-                    <tr><td>Region</td><td>{selectedRow.region ?? ""}</td></tr>
-                    <tr><td>Value</td><td>{selectedRow.value ?? ""}</td></tr>
-                    {Object.entries(selectedRow.metadata ?? {})
-                      .filter(([, value]) => value !== null && value !== "")
-                      .map(([key, value]) => (
-                        <tr key={key}>
-                          <td>{key}</td>
-                          <td>{String(value)}</td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
-            ) : null}
+            <p className="status-panel">Click any row to open its detail popup.</p>
           </CollapsibleSection>
 
           {(data?.notes ?? []).length ? (
@@ -307,6 +273,35 @@ export function KPIDashboardPage() {
           ) : null}
         </div>
       </div>
+
+      {selectedRow ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setSelectedRow(null)}>
+          <div className="modal-card" role="dialog" aria-modal="true" aria-label="KPI detail" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="badge">KPI Detail</span>
+                <h2 className="card-title">{selectedRow.label}</h2>
+              </div>
+              <button className="secondary-button" type="button" onClick={() => setSelectedRow(null)}>Close</button>
+            </div>
+            <div className="audit-detail-grid">
+              <div className="audit-detail-block"><span className="metric-label">Date</span><strong>{selectedRow.date ?? "Unknown"}</strong></div>
+              <div className="audit-detail-block"><span className="metric-label">Region</span><strong>{selectedRow.region ?? "Global"}</strong></div>
+              <div className="audit-detail-block"><span className="metric-label">Value</span><strong>{selectedRow.value ?? "Not provided"}</strong></div>
+            </div>
+            <div className="audit-detail-list">
+              {Object.entries(selectedRow.metadata ?? {})
+                .filter(([, value]) => value !== null && value !== "")
+                .map(([key, value]) => (
+                  <div key={key} className="audit-detail-row">
+                    <span>{key}</span>
+                    <strong>{String(value)}</strong>
+                  </div>
+                ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

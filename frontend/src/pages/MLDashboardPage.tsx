@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { CollapsibleSection } from "../components/layout/CollapsibleSection";
+import { StatCard } from "../components/layout/StatCard";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -140,20 +141,20 @@ export function MLDashboardPage() {
           <section className="hero-card">
             <span className="badge">Mountain Leader</span>
             <h1>{data?.title ?? "ML Dashboard"}</h1>
-            <p>Mountain leader activity and attendee summary with event drill-down kept in a data-first layout.</p>
+            <p>Mountain leader activity with event and attendee detail grouped into cleaner cards.</p>
           </section>
 
           {isLoading ? <p className="status-panel">Loading ML dashboard...</p> : null}
           {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}
 
           <section className="metric-grid">
-            {(data?.metrics ?? []).map((metric) => <article key={metric.label} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+            {(data?.metrics ?? []).map((metric) => <StatCard key={metric.label} label={metric.label} value={metric.value} tone="blue" />)}
           </section>
 
           {(data?.sections ?? []).map((section) => (
             <CollapsibleSection key={section.title} badge={section.title} title={section.title}>
               <div className="metric-grid">
-                {section.metrics.map((metric) => <article key={`${section.title}-${metric.label}`} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+                {section.metrics.map((metric) => <StatCard key={`${section.title}-${metric.label}`} label={metric.label} value={metric.value} tone="rose" />)}
               </div>
             </CollapsibleSection>
           ))}

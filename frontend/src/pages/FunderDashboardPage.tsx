@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { LazyPlot } from "../components/charts/LazyPlot";
 import { CollapsibleSection } from "../components/layout/CollapsibleSection";
+import { StatCard } from "../components/layout/StatCard";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -89,20 +90,20 @@ export function FunderDashboardPage() {
           <section className="hero-card">
             <span className="badge">Funder View</span>
             <h1>{data?.title ?? "Funder Dashboard"}</h1>
-            <p>Aggregated funder-safe metrics, funding detail, and income trend presented in a Streamlit-style control/results split.</p>
+            <p>Funding performance at a glance, with charts and supporting rows tucked into collapsible cards.</p>
           </section>
 
           {isLoading ? <p className="status-panel">Loading funder dashboard...</p> : null}
           {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}
 
           <section className="metric-grid">
-            {(data?.metrics ?? []).map((metric) => <article key={metric.label} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+            {(data?.metrics ?? []).map((metric) => <StatCard key={metric.label} label={metric.label} value={metric.value} tone="amber" />)}
           </section>
 
           {(data?.sections ?? []).map((section) => (
             <CollapsibleSection key={section.title} badge={section.title} title={section.title}>
               <div className="metric-grid">
-                {section.metrics.map((metric) => <article key={`${section.title}-${metric.label}`} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+                {section.metrics.map((metric) => <StatCard key={`${section.title}-${metric.label}`} label={metric.label} value={metric.value} tone="mint" />)}
               </div>
             </CollapsibleSection>
           ))}

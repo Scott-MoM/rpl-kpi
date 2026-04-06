@@ -399,6 +399,40 @@ textarea {
   color: var(--text);
 }
 
+.hero-card {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, rgba(63, 132, 255, 0.18), rgba(255, 95, 122, 0.18)), var(--surface-strong);
+  border-radius: 24px;
+  padding: 26px 28px;
+  border: 1px solid var(--card-border-strong);
+  box-shadow: var(--shadow);
+}
+
+.hero-card::before {
+  content: "";
+  position: absolute;
+  inset: auto -60px -90px auto;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.4), transparent 70%);
+  pointer-events: none;
+}
+
+.hero-card h1 {
+  margin: 10px 0 8px;
+  font-size: clamp(1.9rem, 2.8vw, 2.6rem);
+}
+
+.hero-card p {
+  margin: 0;
+  max-width: 56rem;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
 .collapsible-summary-copy {
   display: flex;
   flex-direction: column;
@@ -494,6 +528,92 @@ textarea {
   box-shadow: var(--shadow);
 }
 
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.stat-card {
+  position: relative;
+  overflow: hidden;
+  min-height: 132px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto auto 0;
+  width: 100%;
+  height: 5px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  opacity: 0.8;
+}
+
+.stat-card-rose {
+  background: linear-gradient(180deg, rgba(255, 95, 122, 0.18), rgba(255, 255, 255, 0.86));
+}
+
+.stat-card-blue {
+  background: linear-gradient(180deg, rgba(63, 132, 255, 0.16), rgba(255, 255, 255, 0.86));
+}
+
+.stat-card-amber {
+  background: linear-gradient(180deg, rgba(255, 190, 92, 0.2), rgba(255, 255, 255, 0.88));
+}
+
+.stat-card-mint {
+  background: linear-gradient(180deg, rgba(73, 198, 163, 0.2), rgba(255, 255, 255, 0.88));
+}
+
+[data-theme="dark"] .stat-card-rose {
+  background: linear-gradient(180deg, rgba(255, 95, 122, 0.28), rgba(8, 16, 31, 0.94));
+}
+
+[data-theme="dark"] .stat-card-blue {
+  background: linear-gradient(180deg, rgba(63, 132, 255, 0.28), rgba(8, 16, 31, 0.94));
+}
+
+[data-theme="dark"] .stat-card-amber {
+  background: linear-gradient(180deg, rgba(255, 190, 92, 0.28), rgba(8, 16, 31, 0.94));
+}
+
+[data-theme="dark"] .stat-card-mint {
+  background: linear-gradient(180deg, rgba(73, 198, 163, 0.28), rgba(8, 16, 31, 0.94));
+}
+
+.stat-card-line {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stat-card-label {
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.stat-card-value {
+  font-size: clamp(1.35rem, 2vw, 1.85rem);
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.stat-card-detail {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
 .filter-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
@@ -520,6 +640,15 @@ textarea {
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--muted);
+}
+
+.interactive-row {
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.interactive-row:hover {
+  background: rgba(63, 132, 255, 0.08);
 }
 
 .modal-backdrop {
@@ -642,6 +771,15 @@ textarea {
 .audit-detail-row strong {
   flex: 1;
   font-weight: 600;
+}
+
+.case-study-popup-card p {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.case-study-popup-card p + p {
+  margin-top: 14px;
 }
 
 .attendee-card-grid {
