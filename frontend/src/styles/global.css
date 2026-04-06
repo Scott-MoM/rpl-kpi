@@ -514,6 +514,128 @@ textarea {
   color: var(--muted);
 }
 
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(12, 18, 37, 0.54);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 2000;
+}
+
+.modal-card {
+  width: min(760px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  background: var(--surface-strong);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.modal-card-wide {
+  width: min(980px, 100%);
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.audit-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audit-log-item {
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-bg);
+  border-radius: 18px;
+  padding: 16px 18px;
+  color: var(--text);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.audit-log-item:hover {
+  transform: translateY(-1px);
+  border-color: var(--card-border-strong);
+  background: var(--surface-strong);
+}
+
+.audit-log-item-top,
+.audit-log-item-meta,
+.audit-detail-row,
+.audit-detail-grid {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.audit-log-item-top {
+  align-items: baseline;
+}
+
+.audit-log-item-meta {
+  margin-top: 8px;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+
+.audit-log-item-preview {
+  margin: 10px 0 0;
+  color: var(--text);
+  line-height: 1.45;
+}
+
+.audit-detail-grid {
+  flex-wrap: wrap;
+}
+
+.audit-detail-block {
+  min-width: 180px;
+  flex: 1 1 180px;
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  padding: 14px 16px;
+  background: var(--glass-bg);
+}
+
+.audit-detail-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.audit-detail-row {
+  align-items: flex-start;
+  border-bottom: 1px solid var(--table-border);
+  padding-bottom: 10px;
+}
+
+.audit-detail-row span {
+  color: var(--muted);
+  flex: 0 0 38%;
+}
+
+.audit-detail-row strong {
+  flex: 1;
+  font-weight: 600;
+}
+
 @media (max-width: 1280px) {
   .app-shell {
     grid-template-columns: 1fr;

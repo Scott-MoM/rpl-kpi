@@ -43,6 +43,41 @@ function AdminSection({ title, badge, defaultOpen = false, children }: AdminSect
   );
 }
 
+function formatAuditLabel(value: string) {
+  return value
+    .replace(/_/g, " ")
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/\s+/g, " ")
+    .trim()
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function formatAuditValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "Not provided";
+  if (Array.isArray(value)) return value.length ? value.map((item) => formatAuditValue(item)).join(", ") : "None";
+  if (typeof value === "boolean") return value ? "Yes" : "No";
+  if (typeof value === "object") return "See related fields below";
+  return String(value);
+}
+
+function flattenAuditDetails(value: unknown, prefix = ""): Array<{ label: string; value: string }> {
+  if (value === null || value === undefined || value === "") {
+    return prefix ? [{ label: formatAuditLabel(prefix), value: "Not provided" }] : [];
+  }
+  if (Array.isArray(value)) {
+    if (!value.length) return prefix ? [{ label: formatAuditLabel(prefix), value: "None" }] : [];
+    const primitiveOnly = value.every((item) => item === null || ["string", "number", "boolean"].includes(typeof item));
+    if (primitiveOnly) {
+      return [{ label: formatAuditLabel(prefix || "Details"), value: value.map((item) => formatAuditValue(item)).join(", ") }];
+    }
+    return value.flatMap((item, index) => flattenAuditDetails(item, prefix ? `${prefix} ${index + 1}` : `Item ${index + 1}`));
+  }
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>).flatMap(([key, nested]) => flattenAuditDetails(nested, prefix ? `${prefix} ${key}` : key));
+  }
+  return [{ label: formatAuditLabel(prefix || "Details"), value: formatAuditValue(value) }];
+}
+
 export function AdminDashboardPage() {
   const { user } = useSession();
   const queryClient = useQueryClient();
@@ -53,6 +88,8 @@ export function AdminDashboardPage() {
   const [tempResetForm, setTempResetForm] = useState({ email: "", temporaryPassword: "" });
   const [auditSearch, setAuditSearch] = useState("");
   const [auditAction, setAuditAction] = useState("");
+  const [isAuditLogOpen, setIsAuditLogOpen] = useState(false);
+  const [selectedAuditEntry, setSelectedAuditEntry] = useState<AuditLogEntry | null>(null);
   const [files, setFiles] = useState<{ people?: File | null; organisation?: File | null; event?: File | null; payment?: File | null; grant?: File | null }>({});
 
   const { data: overview, isLoading, error } = useQuery({ queryKey: ["admin", "overview"], queryFn: () => fetchJson<AdminOverview>("/admin/overview") });
@@ -138,6 +175,7 @@ export function AdminDashboardPage() {
   function formatMs(value: number) { return `${(value / 1000).toFixed(1)}s`; }
 
   const auditActions = Array.from(new Set((auditLogs ?? []).map((item) => item.action))).sort();
+  const selectedAuditDetails = selectedAuditEntry ? flattenAuditDetails(selectedAuditEntry.details) : [];
   const connectionChecks = [
     { label: "Core Supabase", configured: overview?.core_configured ?? false, missing: overview?.core_missing ?? [] },
     { label: "Admin Service Role", configured: overview?.admin_configured ?? false, missing: overview?.admin_missing ?? [] },
@@ -305,19 +343,77 @@ export function AdminDashboardPage() {
 
           <section className="section-card">
             <span className="badge">System Audit Log</span>
-            <div className="filter-grid">
-              <label className="field-label"><span>Search</span><input value={auditSearch} onChange={(event) => setAuditSearch(event.target.value)} placeholder="User, action, or details" /></label>
-              <label className="field-label"><span>Action</span><select value={auditAction} onChange={(event) => setAuditAction(event.target.value)}><option value="">All</option>{auditActions.map((action) => <option key={action} value={action}>{action}</option>)}</select></label>
-            </div>
-            <div className="table-card">
-              <table className="data-table">
-                <thead><tr><th>Created</th><th>User</th><th>Action</th><th>Region</th><th>Details</th></tr></thead>
-                <tbody>{(auditLogs ?? []).map((entry, index) => <tr key={`${entry.created_at ?? "log"}-${entry.action}-${index}`}><td>{entry.created_at ?? ""}</td><td>{entry.user_email ?? ""}</td><td>{entry.action}</td><td>{entry.region ?? ""}</td><td>{typeof entry.details === "string" ? entry.details : JSON.stringify(entry.details ?? {})}</td></tr>)}</tbody>
-              </table>
+            <p>Open the audit log in a focused view with search and readable detail formatting.</p>
+            <div className="meta-row">
+              <button className="primary-button" type="button" onClick={() => setIsAuditLogOpen(true)}>View Audit Log</button>
+              <span className="meta-pill">{auditLogs?.length ?? 0} entries loaded</span>
             </div>
           </section>
         </div>
       </div>
+
+      {isAuditLogOpen ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setIsAuditLogOpen(false)}>
+          <div className="modal-card modal-card-wide" role="dialog" aria-modal="true" aria-label="Audit log" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="badge">Audit Log</span>
+                <h2 className="card-title">System audit log</h2>
+              </div>
+              <button className="secondary-button" type="button" onClick={() => setIsAuditLogOpen(false)}>Close</button>
+            </div>
+            <div className="filter-grid">
+              <label className="field-label"><span>Search</span><input value={auditSearch} onChange={(event) => setAuditSearch(event.target.value)} placeholder="User, action, or details" /></label>
+              <label className="field-label"><span>Action</span><select value={auditAction} onChange={(event) => setAuditAction(event.target.value)}><option value="">All</option>{auditActions.map((action) => <option key={action} value={action}>{action}</option>)}</select></label>
+            </div>
+            <div className="audit-log-list">
+              {(auditLogs ?? []).map((entry, index) => (
+                <button key={`${entry.created_at ?? "log"}-${entry.action}-${index}`} className="audit-log-item" type="button" onClick={() => setSelectedAuditEntry(entry)}>
+                  <div className="audit-log-item-top">
+                    <strong>{entry.action}</strong>
+                    <span>{entry.created_at ?? "Unknown time"}</span>
+                  </div>
+                  <div className="audit-log-item-meta">
+                    <span>User: {entry.user_email ?? "System"}</span>
+                    <span>Region: {entry.region ?? "Global"}</span>
+                  </div>
+                  <p className="audit-log-item-preview">
+                    {selectedAuditEntry === entry ? "Currently open" : (flattenAuditDetails(entry.details)[0]?.value ?? "Open to view details")}
+                  </p>
+                </button>
+              ))}
+              {!auditLogs?.length ? <p className="status-panel">No audit entries matched the current filters.</p> : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {selectedAuditEntry ? (
+        <div className="modal-backdrop" role="presentation" onClick={() => setSelectedAuditEntry(null)}>
+          <div className="modal-card" role="dialog" aria-modal="true" aria-label="Audit log detail" onClick={(event) => event.stopPropagation()}>
+            <div className="modal-header">
+              <div>
+                <span className="badge">Audit Entry</span>
+                <h2 className="card-title">{selectedAuditEntry.action}</h2>
+              </div>
+              <button className="secondary-button" type="button" onClick={() => setSelectedAuditEntry(null)}>Close</button>
+            </div>
+            <div className="audit-detail-grid">
+              <div className="audit-detail-block"><span className="metric-label">When</span><strong>{selectedAuditEntry.created_at ?? "Unknown"}</strong></div>
+              <div className="audit-detail-block"><span className="metric-label">User</span><strong>{selectedAuditEntry.user_email ?? "System"}</strong></div>
+              <div className="audit-detail-block"><span className="metric-label">Region</span><strong>{selectedAuditEntry.region ?? "Global"}</strong></div>
+            </div>
+            <div className="audit-detail-list">
+              {selectedAuditDetails.length ? selectedAuditDetails.map((item) => (
+                <div key={`${item.label}-${item.value}`} className="audit-detail-row">
+                  <span>{item.label}</span>
+                  <strong>{item.value}</strong>
+                </div>
+              )) : <p className="status-panel">No additional details were recorded for this entry.</p>}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
