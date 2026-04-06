@@ -5,12 +5,13 @@ type CollapsibleSectionProps = {
   badge: string;
   defaultOpen?: boolean;
   note?: string;
+  onToggle?: (isOpen: boolean) => void;
   children: ReactNode;
 };
 
-export function CollapsibleSection({ title, badge, defaultOpen = false, note, children }: CollapsibleSectionProps) {
+export function CollapsibleSection({ title, badge, defaultOpen = false, note, onToggle, children }: CollapsibleSectionProps) {
   return (
-    <details className="section-card admin-collapsible collapsible-section" open={defaultOpen}>
+    <details className="section-card admin-collapsible collapsible-section" open={defaultOpen} onToggle={(event) => onToggle?.((event.currentTarget as HTMLDetailsElement).open)}>
       <summary className="admin-collapsible-summary">
         <div className="collapsible-summary-copy">
           <span className="badge">{badge}</span>

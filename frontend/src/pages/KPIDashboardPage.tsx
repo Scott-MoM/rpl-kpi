@@ -52,6 +52,7 @@ const sectionOptions = ["governance", "partnerships", "delivery", "income"] as c
 
 export function KPIDashboardPage() {
   const [selectedRowId, setSelectedRowId] = useState("");
+  const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const region = searchParams.get("region") ?? "Global";
   const startDate = searchParams.get("start_date") ?? "";
@@ -91,7 +92,8 @@ export function KPIDashboardPage() {
 
   const { data: details, isLoading: isLoadingDetails, error: detailsError } = useQuery({
     queryKey: ["dashboard", "kpi", "details", section, region, startDate, endDate],
-    queryFn: () => fetchJson<DashboardDetailPayload>(detailPath)
+    queryFn: () => fetchJson<DashboardDetailPayload>(detailPath),
+    enabled: detailsEnabled
   });
 
   const selectedRow = (details?.rows ?? []).find((row) => row.id === selectedRowId) ?? (details?.rows ?? [])[0] ?? null;
@@ -222,7 +224,7 @@ export function KPIDashboardPage() {
             </CollapsibleSection>
           ))}
 
-          <CollapsibleSection badge="Detail" title="Section detail" note="Expand for row-level data and metadata.">
+          <CollapsibleSection badge="Detail" title="Section detail" note="Expand for row-level data and metadata." onToggle={setDetailsEnabled}>
             {isLoadingDetails ? <p className="status-panel">Loading section detail...</p> : null}
             {detailsError instanceof Error ? <p className="status-panel status-error">{detailsError.message}</p> : null}
             {(details?.rows ?? []).length ? (

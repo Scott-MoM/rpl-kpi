@@ -14,6 +14,7 @@ type DashboardFilterOptions = { regions: string[] };
 type FunderDetailPayload = { funder: string; region: string; timeframe: string; metrics: DashboardMetric[]; income_series: { label: string; value: number; series?: string | null }[]; rows: { id: string; label: string; date?: string | null; value?: string | number | null; metadata: Record<string, string | number | boolean | null> }[] };
 
 export function FunderDashboardPage() {
+  const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const region = searchParams.get("region") ?? "Global";
   const funder = searchParams.get("funder") ?? "All Funders";
@@ -41,7 +42,11 @@ export function FunderDashboardPage() {
 
   const { data: filters } = useQuery({ queryKey: ["dashboard", "filters"], queryFn: () => fetchJson<DashboardFilterOptions>("/dashboard/filters") });
   const { data, isLoading, error } = useQuery({ queryKey: ["dashboard", "funder", queryString], queryFn: () => fetchJson<DashboardPayload>(`/dashboard/funder?${queryString}`) });
-  const { data: details, isLoading: detailsLoading, error: detailsError } = useQuery({ queryKey: ["dashboard", "funder", "details", queryString], queryFn: () => fetchJson<FunderDetailPayload>(`/dashboard/funder/details?${queryString}`) });
+  const { data: details, isLoading: detailsLoading, error: detailsError } = useQuery({
+    queryKey: ["dashboard", "funder", "details", queryString],
+    queryFn: () => fetchJson<FunderDetailPayload>(`/dashboard/funder/details?${queryString}`),
+    enabled: detailsEnabled
+  });
 
   function updateParam(key: string, value: string) {
     const next = new URLSearchParams(searchParams);
@@ -68,13 +73,13 @@ export function FunderDashboardPage() {
             <label className="field-label"><span>Start Date</span><input type="date" value={startDateDraft} onChange={(event) => { const value = event.target.value; setStartDateDraft(value); if (!value || normalizeDateParam(value)) updateParam("start_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("start_date", event.target.value, setStartDateDraft)} /></label>
             <label className="field-label"><span>End Date</span><input type="date" value={endDateDraft} onChange={(event) => { const value = event.target.value; setEndDateDraft(value); if (!value || normalizeDateParam(value)) updateParam("end_date", normalizeDateParam(value)); }} onBlur={(event) => commitDateParam("end_date", event.target.value, setEndDateDraft)} /></label>
           </section>
-          {details ? (
+          {data ? (
             <section className="control-panel">
               <span className="badge">Current View</span>
               <div className="sidebar-meta-list">
-                <div className="sidebar-meta-row"><span>Funder</span><strong>{details.funder}</strong></div>
-                <div className="sidebar-meta-row"><span>Region</span><strong>{details.region}</strong></div>
-                <div className="sidebar-meta-row"><span>Timeframe</span><strong>{details.timeframe}</strong></div>
+                <div className="sidebar-meta-row"><span>Funder</span><strong>{funder}</strong></div>
+                <div className="sidebar-meta-row"><span>Region</span><strong>{data.region}</strong></div>
+                <div className="sidebar-meta-row"><span>Timeframe</span><strong>{data.timeframe}</strong></div>
               </div>
             </section>
           ) : null}
@@ -91,7 +96,7 @@ export function FunderDashboardPage() {
           {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}
 
           <section className="metric-grid">
-            {(details?.metrics ?? data?.metrics ?? []).map((metric) => <article key={metric.label} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
+            {(data?.metrics ?? []).map((metric) => <article key={metric.label} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
           </section>
 
           {(data?.sections ?? []).map((section) => (
@@ -102,26 +107,30 @@ export function FunderDashboardPage() {
             </CollapsibleSection>
           ))}
 
-          <CollapsibleSection badge="Chart" title="Income trend" defaultOpen>
+          <CollapsibleSection badge="Chart" title="Income trend" defaultOpen onToggle={setDetailsEnabled}>
             {detailsLoading ? <p className="status-panel">Loading funder detail...</p> : null}
             {detailsError instanceof Error ? <p className="status-panel status-error">{detailsError.message}</p> : null}
-            <div className="plot-card">
-              <LazyPlot
-                data={seriesNames.map((series) => ({ type: "scatter", mode: "lines+markers", name: series, x: (details?.income_series ?? []).filter((item) => (item.series || "Series") === series).map((item) => item.label), y: (details?.income_series ?? []).filter((item) => (item.series || "Series") === series).map((item) => item.value) }))}
-                layout={{ autosize: true, paper_bgcolor: "rgba(255,255,255,0)", plot_bgcolor: "rgba(255,255,255,0)", font: { color: "#172133" }, margin: { t: 24, r: 24, b: 48, l: 48 } }}
-                style={{ width: "100%", height: "420px" }}
-                config={{ displayModeBar: false, responsive: true }}
-              />
-            </div>
+            {details ? (
+              <div className="plot-card">
+                <LazyPlot
+                  data={seriesNames.map((series) => ({ type: "scatter", mode: "lines+markers", name: series, x: (details.income_series ?? []).filter((item) => (item.series || "Series") === series).map((item) => item.label), y: (details.income_series ?? []).filter((item) => (item.series || "Series") === series).map((item) => item.value) }))}
+                  layout={{ autosize: true, paper_bgcolor: "rgba(255,255,255,0)", plot_bgcolor: "rgba(255,255,255,0)", font: { color: "#172133" }, margin: { t: 24, r: 24, b: 48, l: 48 } }}
+                  style={{ width: "100%", height: "420px" }}
+                  config={{ displayModeBar: false, responsive: true }}
+                />
+              </div>
+            ) : <p className="status-panel">Open this section to load the trend data.</p>}
           </CollapsibleSection>
 
-          <CollapsibleSection badge="Rows" title="Funding rows" note="Expand for the underlying records.">
-            <div className="table-card">
-              <table className="data-table">
-                <thead><tr><th>Item</th><th>Date</th><th>Value</th><th>Metadata</th></tr></thead>
-                <tbody>{(details?.rows ?? []).map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
-              </table>
-            </div>
+          <CollapsibleSection badge="Rows" title="Funding rows" note="Expand for the underlying records." onToggle={setDetailsEnabled}>
+            {details ? (
+              <div className="table-card">
+                <table className="data-table">
+                  <thead><tr><th>Item</th><th>Date</th><th>Value</th><th>Metadata</th></tr></thead>
+                  <tbody>{details.rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
+                </table>
+              </div>
+            ) : <p className="status-panel">Open this section to load the underlying rows.</p>}
           </CollapsibleSection>
         </div>
       </div>

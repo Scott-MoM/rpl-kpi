@@ -15,6 +15,7 @@ type DashboardDetailPayload = { section: string; region: string; timeframe: stri
 type MLEventDetailPayload = { event_id: string; label: string; date?: string | null; region?: string | null; event_type?: string | null; participants: number; metadata: DashboardDetailRow[]; personal_rows: DashboardDetailRow[]; medical_rows: DashboardDetailRow[]; emergency_rows: DashboardDetailRow[] };
 
 export function MLDashboardPage() {
+  const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const region = searchParams.get("region") ?? "Global";
   const startDate = searchParams.get("start_date") ?? "";
@@ -41,7 +42,11 @@ export function MLDashboardPage() {
 
   const { data: filters } = useQuery({ queryKey: ["dashboard", "filters"], queryFn: () => fetchJson<DashboardFilterOptions>("/dashboard/filters") });
   const { data, isLoading, error } = useQuery({ queryKey: ["dashboard", "ml", region, startDate, endDate], queryFn: () => fetchJson<DashboardPayload>(queryString ? `/dashboard/ml?${queryString}` : "/dashboard/ml") });
-  const { data: details, isLoading: detailLoading, error: detailError } = useQuery({ queryKey: ["dashboard", "ml", "details", region, startDate, endDate], queryFn: () => fetchJson<DashboardDetailPayload>(queryString ? `/dashboard/ml/details?${queryString}` : "/dashboard/ml/details") });
+  const { data: details, isLoading: detailLoading, error: detailError } = useQuery({
+    queryKey: ["dashboard", "ml", "details", region, startDate, endDate],
+    queryFn: () => fetchJson<DashboardDetailPayload>(queryString ? `/dashboard/ml/details?${queryString}` : "/dashboard/ml/details"),
+    enabled: detailsEnabled
+  });
 
   useEffect(() => {
     if (!details?.rows?.length || selectedEventId) return;
@@ -54,7 +59,7 @@ export function MLDashboardPage() {
   const { data: eventDetail } = useQuery({
     queryKey: ["dashboard", "ml", "event", effectiveEventId, region, startDate, endDate],
     queryFn: () => fetchJson<MLEventDetailPayload>(`/dashboard/ml/events/${encodeURIComponent(effectiveEventId)}?region=${encodeURIComponent(region)}${startDate ? `&start_date=${startDate}` : ""}${endDate ? `&end_date=${endDate}` : ""}`),
-    enabled: Boolean(effectiveEventId)
+    enabled: Boolean(effectiveEventId) && detailsEnabled
   });
 
   function updateParam(key: string, value: string) {
@@ -114,15 +119,17 @@ export function MLDashboardPage() {
             </CollapsibleSection>
           ))}
 
-          <CollapsibleSection badge="Events" title="Event list" defaultOpen>
+          <CollapsibleSection badge="Events" title="Event list" defaultOpen onToggle={setDetailsEnabled}>
             {detailLoading ? <p className="status-panel">Loading event rows...</p> : null}
             {detailError instanceof Error ? <p className="status-panel status-error">{detailError.message}</p> : null}
-            <div className="table-card">
-              <table className="data-table">
-                <thead><tr><th>Event</th><th>Date</th><th>Region</th><th>Participants</th><th>Metadata</th></tr></thead>
-                <tbody>{(details?.rows ?? []).map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.region ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
-              </table>
-            </div>
+            {details ? (
+              <div className="table-card">
+                <table className="data-table">
+                  <thead><tr><th>Event</th><th>Date</th><th>Region</th><th>Participants</th><th>Metadata</th></tr></thead>
+                  <tbody>{details.rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.region ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
+                </table>
+              </div>
+            ) : <p className="status-panel">Open this section to load event rows.</p>}
           </CollapsibleSection>
 
           {eventDetail ? (
