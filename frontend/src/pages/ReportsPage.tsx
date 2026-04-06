@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 
 import { useSession } from "../app/session";
 import { LazyPlot } from "../components/charts/LazyPlot";
+import { CollapsibleSection } from "../components/layout/CollapsibleSection";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -346,8 +347,7 @@ export function ReportsPage() {
             <article className="metric-card"><span className="metric-label">Total Metric</span><strong className="metric-value">{(data?.summary.total_metric_value ?? 0).toFixed(1)}</strong></article>
           </section>
 
-          <section className="section-card">
-            <span className="badge">Saved Reports</span>
+          <CollapsibleSection badge="Saved" title="Saved reports">
             <div className="table-card">
               <table className="data-table">
                 <thead><tr><th>Name</th><th>Owner</th><th>Updated</th><th>Shared With</th><th>Action</th></tr></thead>
@@ -365,11 +365,10 @@ export function ReportsPage() {
               </table>
             </div>
             {updateSharing.error instanceof Error ? <p className="status-panel status-error">{updateSharing.error.message}</p> : null}
-          </section>
+          </CollapsibleSection>
 
           {outputType === "Bar" || outputType === "Pie" || outputType === "Line" || outputType === "Comparison" || outputType === "UK Map" ? (
-            <section className="section-card">
-              <span className="badge">Visual Output</span>
+            <CollapsibleSection badge="Chart" title="Visual output" defaultOpen>
               <div className="plot-card">
                 <LazyPlot
                   data={
@@ -389,21 +388,19 @@ export function ReportsPage() {
                 />
               </div>
               {outputType === "Comparison" ? <p>{altCompare || "Comparison"} is {(comparisonDelta >= 0 ? "+" : "") + comparisonDelta.toFixed(2)} against {baseCompare || "baseline"}.</p> : null}
-            </section>
+            </CollapsibleSection>
           ) : null}
 
-          <section className="section-card">
-            <span className="badge">Grouped Output</span>
+          <CollapsibleSection badge="Grouped" title="Grouped output">
             <div className="table-card">
               <table className="data-table">
                 <thead><tr><th>{data?.group_by ?? "group"}</th><th>Value</th></tr></thead>
                 <tbody>{(data?.grouped_rows ?? []).map((row) => <tr key={row.key}><td>{row.key}</td><td>{row.value.toFixed(2)}</td></tr>)}</tbody>
               </table>
             </div>
-          </section>
+          </CollapsibleSection>
 
-          <section className="section-card">
-            <span className="badge">Tabular Output</span>
+          <CollapsibleSection badge="Table" title="Tabular output" note="Expand for the raw rows.">
             <div className="table-card">
               <table className="data-table">
                 <thead><tr><th>Dataset</th><th>Date</th><th>Region</th><th>Category</th><th>Label</th><th>Status</th><th>Metric</th></tr></thead>
@@ -416,7 +413,7 @@ export function ReportsPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </CollapsibleSection>
         </div>
       </div>
     </section>

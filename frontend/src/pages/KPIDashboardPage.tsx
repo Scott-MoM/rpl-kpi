@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
+import { CollapsibleSection } from "../components/layout/CollapsibleSection";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -208,10 +209,7 @@ export function KPIDashboardPage() {
           </section>
 
           {(data?.sections ?? []).map((item) => (
-            <section key={item.title} className="section-card">
-              <div className="section-header">
-                <span className="badge">{item.title}</span>
-              </div>
+            <CollapsibleSection key={item.title} badge={item.title} title={item.title} defaultOpen={item.title.toLowerCase() === section}>
               <div className="metric-grid">
                 {item.metrics.map((metric) => (
                   <article key={`${item.title}-${metric.label}`} className="metric-card">
@@ -221,11 +219,10 @@ export function KPIDashboardPage() {
                   </article>
                 ))}
               </div>
-            </section>
+            </CollapsibleSection>
           ))}
 
-          <section className="section-card">
-            <span className="badge">Detail View</span>
+          <CollapsibleSection badge="Detail" title="Section detail" note="Expand for row-level data and metadata.">
             {isLoadingDetails ? <p className="status-panel">Loading section detail...</p> : null}
             {detailsError instanceof Error ? <p className="status-panel status-error">{detailsError.message}</p> : null}
             {(details?.rows ?? []).length ? (
@@ -295,17 +292,16 @@ export function KPIDashboardPage() {
                 </table>
               </div>
             ) : null}
-          </section>
+          </CollapsibleSection>
 
           {(data?.notes ?? []).length ? (
-            <section className="section-card">
-              <span className="badge">Notes</span>
+            <CollapsibleSection badge="Notes" title="Notes">
               <div className="notes-list">
                 {data?.notes.map((note) => (
                   <p key={note}>{note}</p>
                 ))}
               </div>
-            </section>
+            </CollapsibleSection>
           ) : null}
         </div>
       </div>

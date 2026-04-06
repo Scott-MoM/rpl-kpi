@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
 import { LazyPlot } from "../components/charts/LazyPlot";
+import { CollapsibleSection } from "../components/layout/CollapsibleSection";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -94,16 +95,14 @@ export function FunderDashboardPage() {
           </section>
 
           {(data?.sections ?? []).map((section) => (
-            <section key={section.title} className="section-card">
-              <div className="section-header"><span className="badge">{section.title}</span></div>
+            <CollapsibleSection key={section.title} badge={section.title} title={section.title}>
               <div className="metric-grid">
                 {section.metrics.map((metric) => <article key={`${section.title}-${metric.label}`} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
               </div>
-            </section>
+            </CollapsibleSection>
           ))}
 
-          <section className="section-card">
-            <span className="badge">Income Trend</span>
+          <CollapsibleSection badge="Chart" title="Income trend" defaultOpen>
             {detailsLoading ? <p className="status-panel">Loading funder detail...</p> : null}
             {detailsError instanceof Error ? <p className="status-panel status-error">{detailsError.message}</p> : null}
             <div className="plot-card">
@@ -114,17 +113,16 @@ export function FunderDashboardPage() {
                 config={{ displayModeBar: false, responsive: true }}
               />
             </div>
-          </section>
+          </CollapsibleSection>
 
-          <section className="section-card">
-            <span className="badge">Funding Rows</span>
+          <CollapsibleSection badge="Rows" title="Funding rows" note="Expand for the underlying records.">
             <div className="table-card">
               <table className="data-table">
                 <thead><tr><th>Item</th><th>Date</th><th>Value</th><th>Metadata</th></tr></thead>
                 <tbody>{(details?.rows ?? []).map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
               </table>
             </div>
-          </section>
+          </CollapsibleSection>
         </div>
       </div>
     </section>

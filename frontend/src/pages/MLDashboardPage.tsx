@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 
+import { CollapsibleSection } from "../components/layout/CollapsibleSection";
 import { fetchJson } from "../lib/api";
 import { normalizeDateParam } from "../lib/dateParams";
 
@@ -106,16 +107,14 @@ export function MLDashboardPage() {
           </section>
 
           {(data?.sections ?? []).map((section) => (
-            <section key={section.title} className="section-card">
-              <div className="section-header"><span className="badge">{section.title}</span></div>
+            <CollapsibleSection key={section.title} badge={section.title} title={section.title}>
               <div className="metric-grid">
                 {section.metrics.map((metric) => <article key={`${section.title}-${metric.label}`} className="metric-card"><span className="metric-label">{metric.label}</span><strong className="metric-value">{metric.value}</strong></article>)}
               </div>
-            </section>
+            </CollapsibleSection>
           ))}
 
-          <section className="section-card">
-            <span className="badge">Event Detail</span>
+          <CollapsibleSection badge="Events" title="Event list" defaultOpen>
             {detailLoading ? <p className="status-panel">Loading event rows...</p> : null}
             {detailError instanceof Error ? <p className="status-panel status-error">{detailError.message}</p> : null}
             <div className="table-card">
@@ -124,14 +123,14 @@ export function MLDashboardPage() {
                 <tbody>{(details?.rows ?? []).map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.date ?? ""}</td><td>{row.region ?? ""}</td><td>{row.value ?? ""}</td><td>{Object.entries(row.metadata).map(([key, value]) => `${key}: ${value}`).join(" | ")}</td></tr>)}</tbody>
               </table>
             </div>
-          </section>
+          </CollapsibleSection>
 
           {eventDetail ? (
             <>
-              <section className="section-card"><span className="badge">Selected Event</span><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.metadata.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></section>
-              <section className="section-card"><span className="badge">Personal Information</span><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.personal_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></section>
-              <section className="section-card"><span className="badge">Medical Information</span><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.medical_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></section>
-              <section className="section-card"><span className="badge">Emergency Contact Details</span><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.emergency_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></section>
+              <CollapsibleSection badge="Event" title="Selected event" defaultOpen><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.metadata.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
+              <CollapsibleSection badge="Personal" title="Personal information"><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.personal_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
+              <CollapsibleSection badge="Medical" title="Medical information"><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.medical_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
+              <CollapsibleSection badge="Contacts" title="Emergency contacts"><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.emergency_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
             </>
           ) : null}
         </div>

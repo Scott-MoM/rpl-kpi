@@ -391,6 +391,19 @@ textarea {
   color: var(--text);
 }
 
+.collapsible-summary-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.collapsible-note {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.45;
+  max-width: 56rem;
+}
+
 .card-title::after {
   margin-top: 8px;
 }
