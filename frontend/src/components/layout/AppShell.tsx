@@ -87,7 +87,7 @@ export function AppShell() {
           </div>
           <p className="sidebar-copy">
             See the keep-awake monitor on the{" "}
-            <a href="https://w0y3n1ns.status.cron-job.org/" target="_blank" rel="noreferrer">
+            <a href="https://k62b8n0t.status.cron-job.org/" target="_blank" rel="noreferrer">
               Status Page
             </a>
             .
