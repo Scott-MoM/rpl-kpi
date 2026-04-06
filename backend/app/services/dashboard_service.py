@@ -25,7 +25,7 @@ from ..schemas.dashboards import (
 class DashboardService:
     _fetch_batch_size = 250
     _fetch_row_limit = 5000
-    _cache_ttl_seconds = 300
+    _cache_ttl_seconds = 3600
 
     def __init__(self) -> None:
         self._cache: dict[tuple[Any, ...], tuple[float, Any]] = {}
