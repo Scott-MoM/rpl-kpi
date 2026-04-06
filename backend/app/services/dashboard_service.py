@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
-from threading import Lock
+from threading import Event, Lock
 from time import monotonic
 from typing import Any
 
@@ -30,6 +31,7 @@ class DashboardService:
     def __init__(self) -> None:
         self._cache: dict[tuple[Any, ...], tuple[float, Any]] = {}
         self._cache_lock = Lock()
+        self._inflight: dict[tuple[Any, ...], Event] = {}
 
     def list_dashboard_sections(self) -> list[DashboardSummary]:
         return [
@@ -389,8 +391,27 @@ class DashboardService:
         if cached is not None:
             return cached
 
+        wait_event: Event | None = None
+        should_compute = False
+        with self._cache_lock:
+            inflight_event = self._inflight.get(cache_key)
+            if inflight_event is None:
+                inflight_event = Event()
+                self._inflight[cache_key] = inflight_event
+                should_compute = True
+            else:
+                wait_event = inflight_event
+
+        if wait_event is not None:
+            wait_event.wait()
+            cached = self._cache_get(cache_key)
+            if cached is not None:
+                return cached
+
         client = get_supabase_server_client()
         if not client:
+            if should_compute:
+                self._finish_inflight(cache_key)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Supabase is not configured. Set RPL_SUPABASE_URL and RPL_SUPABASE_KEY.",
@@ -421,21 +442,30 @@ class DashboardService:
         start_iso = self._to_iso_boundary(start_date, is_end=False)
         end_iso = self._to_iso_boundary(end_date, is_end=True)
 
-        rows: dict[str, list[dict[str, Any]]] = {}
-        for key, (table, columns, date_field) in selections.items():
-            rows[key] = self._fetch_supabase_rows(client, table, columns, date_field, start_iso, end_iso)
+        try:
+            def fetch_rows(item: tuple[str, tuple[str, str, str]]) -> tuple[str, list[dict[str, Any]]]:
+                key, (table, columns, date_field) = item
+                return key, self._fetch_supabase_rows(client, table, columns, date_field, start_iso, end_iso)
 
-        people = self._rows_to_payloads(rows.get("people", []), date_field="created_at")
-        organisations = self._rows_to_payloads(rows.get("organisations", []), date_field="created_at")
-        events = self._rows_to_payloads(rows.get("events", []), date_field="start_date", region_field="region")
-        payments = self._rows_to_payloads(rows.get("payments", []), date_field="payment_date")
-        grants = self._rows_to_payloads(rows.get("grants", []), date_field="close_date")
-        event_attendee_records = self._build_event_attendee_records(rows.get("attendees", []))
+            rows: dict[str, list[dict[str, Any]]] = {}
+            with ThreadPoolExecutor(max_workers=min(5, len(selections))) as executor:
+                for key, value in executor.map(fetch_rows, selections.items()):
+                    rows[key] = value
 
-        result = self._compute_kpis(region, people, organisations, events, payments, grants, event_attendee_records)
-        result["_source"] = f"supabase_{dashboard_kind}"
-        self._cache_set(cache_key, result)
-        return result
+            people = self._rows_to_payloads(rows.get("people", []), date_field="created_at")
+            organisations = self._rows_to_payloads(rows.get("organisations", []), date_field="created_at")
+            events = self._rows_to_payloads(rows.get("events", []), date_field="start_date", region_field="region")
+            payments = self._rows_to_payloads(rows.get("payments", []), date_field="payment_date")
+            grants = self._rows_to_payloads(rows.get("grants", []), date_field="close_date")
+            event_attendee_records = self._build_event_attendee_records(rows.get("attendees", []))
+
+            result = self._compute_kpis(region, people, organisations, events, payments, grants, event_attendee_records)
+            result["_source"] = f"supabase_{dashboard_kind}"
+            self._cache_set(cache_key, result)
+            return result
+        finally:
+            if should_compute:
+                self._finish_inflight(cache_key)
 
     def _cache_get(self, key: tuple[Any, ...]) -> Any | None:
         now = monotonic()
@@ -453,6 +483,12 @@ class DashboardService:
         expires_at = monotonic() + self._cache_ttl_seconds
         with self._cache_lock:
             self._cache[key] = (expires_at, value)
+
+    def _finish_inflight(self, key: tuple[Any, ...]) -> None:
+        with self._cache_lock:
+            event = self._inflight.pop(key, None)
+        if event is not None:
+            event.set()
 
     def _fetch_attendees_for_event(self, event_id: str) -> list[dict[str, Any]]:
         client = get_supabase_server_client()
