@@ -18,31 +18,37 @@ function renderAttendeeTable(rows: DashboardDetailRow[], emptyMessage: string) {
   if (!rows.length) {
     return <p className="status-panel">{emptyMessage}</p>;
   }
+
   return (
-    <div className="table-card">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Attendee</th>
-            <th>Primary Detail</th>
-            <th>Additional Details</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.id}>
-              <td>{row.label}</td>
-              <td>{row.value ?? ""}</td>
-              <td>
-                {Object.entries(row.metadata ?? {})
-                  .filter(([, value]) => value !== null && value !== "")
-                  .map(([key, value]) => `${key}: ${value}`)
-                  .join(" | ") || "None recorded"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="attendee-card-grid">
+      {rows.map((row) => (
+        <article key={row.id} className="attendee-card">
+          <div className="attendee-card-header">
+            <span className="badge">Attendee</span>
+            <h3 className="attendee-card-title">{row.label}</h3>
+          </div>
+          <div className="attendee-detail-list">
+            <div className="attendee-detail-row">
+              <span>Primary Detail</span>
+              <strong>{row.value ?? "Not provided"}</strong>
+            </div>
+            {Object.entries(row.metadata ?? {})
+              .filter(([, value]) => value !== null && value !== "")
+              .map(([key, value]) => (
+                <div key={`${row.id}-${key}`} className="attendee-detail-row">
+                  <span>{key}</span>
+                  <strong>{String(value)}</strong>
+                </div>
+              ))}
+            {!Object.keys(row.metadata ?? {}).length ? (
+              <div className="attendee-detail-row">
+                <span>Additional Details</span>
+                <strong>None recorded</strong>
+              </div>
+            ) : null}
+          </div>
+        </article>
+      ))}
     </div>
   );
 }
