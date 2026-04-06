@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from datetime import datetime
+from threading import Lock
+from time import monotonic
 from typing import Any
 
 from fastapi import HTTPException, status
@@ -23,6 +25,11 @@ from ..schemas.dashboards import (
 class DashboardService:
     _fetch_batch_size = 250
     _fetch_row_limit = 5000
+    _cache_ttl_seconds = 300
+
+    def __init__(self) -> None:
+        self._cache: dict[tuple[Any, ...], tuple[float, Any]] = {}
+        self._cache_lock = Lock()
 
     def list_dashboard_sections(self) -> list[DashboardSummary]:
         return [
@@ -44,6 +51,11 @@ class DashboardService:
         return self._build_payload("ML Dashboard", region, start_date, end_date, result)
 
     def get_filter_options(self) -> DashboardFilterOptions:
+        cache_key = ("filter_options",)
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         client = get_supabase_server_client()
         if not client:
             return DashboardFilterOptions(regions=["Global"])
@@ -58,7 +70,9 @@ class DashboardService:
             value = str(row.get("region") or "").strip()
             if value:
                 regions.add(value)
-        return DashboardFilterOptions(regions=sorted(regions))
+        result = DashboardFilterOptions(regions=sorted(regions))
+        self._cache_set(cache_key, result)
+        return result
 
     def get_kpi_section_detail(
         self,
@@ -370,6 +384,11 @@ class DashboardService:
         start_date: str | None,
         end_date: str | None,
     ) -> dict[str, Any]:
+        cache_key = ("dashboard_data", dashboard_kind, region, start_date or "", end_date or "")
+        cached = self._cache_get(cache_key)
+        if cached is not None:
+            return cached
+
         client = get_supabase_server_client()
         if not client:
             raise HTTPException(
@@ -415,7 +434,25 @@ class DashboardService:
 
         result = self._compute_kpis(region, people, organisations, events, payments, grants, event_attendee_records)
         result["_source"] = f"supabase_{dashboard_kind}"
+        self._cache_set(cache_key, result)
         return result
+
+    def _cache_get(self, key: tuple[Any, ...]) -> Any | None:
+        now = monotonic()
+        with self._cache_lock:
+            entry = self._cache.get(key)
+            if not entry:
+                return None
+            expires_at, value = entry
+            if expires_at <= now:
+                self._cache.pop(key, None)
+                return None
+            return value
+
+    def _cache_set(self, key: tuple[Any, ...], value: Any) -> None:
+        expires_at = monotonic() + self._cache_ttl_seconds
+        with self._cache_lock:
+            self._cache[key] = (expires_at, value)
 
     def _fetch_attendees_for_event(self, event_id: str) -> list[dict[str, Any]]:
         client = get_supabase_server_client()
