@@ -1,6 +1,7 @@
 import { createContext, PropsWithChildren, useContext, useEffect, useState } from "react";
 
 import {
+  ApiError,
   clearStoredToken,
   clearStoredUser,
   fetchJson,
@@ -62,11 +63,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }
 
     refreshUser()
-      .catch(() => {
-        clearStoredToken();
-        clearStoredUser();
-        setToken(null);
-        setUser(null);
+      .catch((error) => {
+        if (error instanceof ApiError && error.status && [401, 403].includes(error.status)) {
+          clearStoredToken();
+          clearStoredUser();
+          setToken(null);
+          setUser(null);
+        }
       })
       .finally(() => setIsReady(true));
   }, []);

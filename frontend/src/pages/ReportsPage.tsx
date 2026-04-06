@@ -121,8 +121,9 @@ export function ReportsPage() {
     if (endDate) params.set("end_date", endDate);
     if (minValue) params.set("min_value", minValue);
     if (maxValue) params.set("max_value", maxValue);
+    params.set("row_limit", String(rowLimit));
     return params.toString();
-  }, [aggregation, categoryFilters, endDate, groupBy, maxValue, metric, minValue, region, requireDate, selectedDatasets, startDate, statusFilters]);
+  }, [aggregation, categoryFilters, endDate, groupBy, maxValue, metric, minValue, region, requireDate, rowLimit, selectedDatasets, startDate, statusFilters]);
 
   const { data: filters } = useQuery({
     queryKey: ["dashboard", "filters"],
@@ -349,6 +350,8 @@ export function ReportsPage() {
             <h1>Custom Reports Dashboard</h1>
             <p>Build reports quickly, then open only the chart, grouped output, or raw table you actually need.</p>
           </section>
+
+          {hasTravelDistanceDataset ? <p className="status-panel">Travel Distance reports use the row limit as the routing cap, up to 150 road-distance calculations per request.</p> : null}
 
           {isLoading ? <p className="status-panel">Loading report data...</p> : null}
           {error instanceof Error ? <p className="status-panel status-error">{error.message}</p> : null}

@@ -54,6 +54,7 @@ class ReportsService:
         group_by: str = "region",
         metric: str = "metric_value",
         aggregation: str = "sum",
+        row_limit: int = 500,
     ) -> ReportResponse:
         client = get_supabase_server_client()
         if not client:
@@ -63,10 +64,11 @@ class ReportsService:
             )
 
         datasets = dataset or ["Events", "Payments"]
+        normalized_row_limit = max(10, min(int(row_limit or 500), self._fetch_row_limit))
         rows: list[dict[str, Any]] = []
         for dataset_key in datasets:
             if dataset_key == "Travel Distance":
-                rows.extend(self._fetch_travel_distance_rows(client, start_date, end_date))
+                rows.extend(self._fetch_travel_distance_rows(client, start_date, end_date, normalized_row_limit))
             else:
                 rows.extend(self._fetch_dataset_rows(client, dataset_key, start_date, end_date))
 
@@ -82,6 +84,7 @@ class ReportsService:
             rows = [row for row in rows if row["metric_value"] <= max_value]
         if require_date:
             rows = [row for row in rows if row["date"]]
+        rows = rows[:normalized_row_limit]
 
         available_group_by = [
             "dataset",
@@ -303,7 +306,9 @@ class ReportsService:
         client,
         start_date: str | None,
         end_date: str | None,
+        row_limit: int,
     ) -> list[dict[str, Any]]:
+        max_routes = max(10, min(row_limit, 150))
         events = self._fetch_raw_rows(client, "beacon_events", "payload, start_date, region", "start_date", start_date, end_date)
         attendees = self._fetch_raw_rows(client, "beacon_event_attendees", "payload, event_id, person_id, created_at", "created_at", None, None)
         people = self._fetch_raw_rows(client, "beacon_people", "payload, created_at", "created_at", None, None)
@@ -329,6 +334,8 @@ class ReportsService:
 
         flattened: list[dict[str, Any]] = []
         for row in attendees:
+            if len(flattened) >= max_routes:
+                break
             payload = row.get("payload") or {}
             event_id = payload.get("event_id") or row.get("event_id")
             person_id = payload.get("person_id") or row.get("person_id")

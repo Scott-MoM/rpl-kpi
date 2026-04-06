@@ -22,6 +22,7 @@ def get_custom_report(
     group_by: str = Query(default="region"),
     metric: str = Query(default="metric_value"),
     aggregation: str = Query(default="sum"),
+    row_limit: int = Query(default=500),
 ) -> ReportResponse:
     return service.get_custom_report(
         dataset=dataset,
@@ -37,6 +38,7 @@ def get_custom_report(
         group_by=group_by,
         metric=metric,
         aggregation=aggregation,
+        row_limit=row_limit,
     )
 
 

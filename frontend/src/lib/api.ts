@@ -15,6 +15,18 @@ const API_BASE_URL = resolveApiBaseUrl();
 const TOKEN_STORAGE_KEY = "rpl-kpi-token";
 const USER_STORAGE_KEY = "rpl-kpi-user";
 
+export class ApiError extends Error {
+  status?: number;
+  isNetworkError: boolean;
+
+  constructor(message: string, options: { status?: number; isNetworkError?: boolean } = {}) {
+    super(message);
+    this.name = "ApiError";
+    this.status = options.status;
+    this.isNetworkError = options.isNetworkError ?? false;
+  }
+}
+
 export function getStoredToken() {
   return window.localStorage.getItem(TOKEN_STORAGE_KEY);
 }
@@ -48,14 +60,19 @@ export async function fetchJson<T>(path: string, options: RequestOptions = {}): 
   const { token, headers, ...rest } = options;
   const authToken = token ?? getStoredToken();
   const isFormData = typeof FormData !== "undefined" && rest.body instanceof FormData;
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...rest,
-    headers: {
-      ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
-      ...(isFormData ? {} : { "Content-Type": "application/json" }),
-      ...headers
-    }
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...rest,
+      headers: {
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        ...headers
+      }
+    });
+  } catch {
+    throw new ApiError("Could not reach the API. Please wait a moment and try again.", { isNetworkError: true });
+  }
 
   if (!response.ok) {
     let detail = `API request failed: ${response.status}`;
@@ -67,7 +84,7 @@ export async function fetchJson<T>(path: string, options: RequestOptions = {}): 
     } catch {
       // Ignore non-JSON errors.
     }
-    throw new Error(detail);
+    throw new ApiError(detail, { status: response.status });
   }
 
   if (response.status === 204) {
