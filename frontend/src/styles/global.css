@@ -94,7 +94,7 @@ textarea {
 .app-shell {
   min-height: 100vh;
   display: grid;
-  grid-template-columns: minmax(260px, 320px) 1fr minmax(320px, 1.5fr);
+  grid-template-columns: minmax(320px, 35vw) minmax(0, 65vw);
   gap: 22px;
   padding: 20px;
 }
@@ -164,6 +164,14 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 18px;
+}
+
+.sidebar-page-title {
+  font-size: 1.55rem;
+}
+
+.sidebar-theme-row {
+  margin-top: 6px;
 }
 
 .sidebar-section {

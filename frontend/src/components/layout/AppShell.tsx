@@ -48,6 +48,24 @@ export function AppShell() {
     <div className="app-shell">
       <aside className="sidebar-panel glass-panel glass-panel-sidebar">
         <section className="sidebar-section">
+          <span className="sidebar-section-title">Current View</span>
+          <div className="topbar-copy">
+            <span className="eyebrow">Dashboard</span>
+            <h2 className="page-title sidebar-page-title">{currentLabel}</h2>
+          </div>
+          <div className="meta-row">
+            <span className="meta-pill">{user?.role ?? "Unknown"}</span>
+            <span className="meta-pill">{user?.region ?? "Global"}</span>
+          </div>
+          <div className="theme-toggle-row sidebar-theme-row">
+            <span className="theme-label">Theme</span>
+            <button className="secondary-button" type="button" onClick={toggleTheme}>
+              {theme === "light" ? "Dark" : "Light"}
+            </button>
+          </div>
+        </section>
+
+        <section className="sidebar-section">
           <span className="sidebar-section-title">Account</span>
           <strong>{`${getGreeting()}, ${displayName(user?.name, user?.email)}`}</strong>
           <p className="sidebar-subtext">Regional KPI Dashboard</p>
@@ -102,31 +120,6 @@ export function AppShell() {
           </button>
         </section>
       </aside>
-
-      <main className="controls-column glass-panel glass-panel-controls">
-        <header className="topbar controls-topbar">
-          <div className="topbar-grid">
-            <div className="topbar-copy">
-              <span className="eyebrow">Dashboard Controls</span>
-              <h2 className="page-title">{currentLabel}</h2>
-            </div>
-            <div className="meta-row">
-              <span className="meta-pill">{user?.role ?? "Unknown"}</span>
-              <span className="meta-pill">{user?.region ?? "Global"}</span>
-            </div>
-          </div>
-          <div className="theme-toggle-row">
-            <span className="theme-label">Theme</span>
-            <button className="secondary-button" type="button" onClick={toggleTheme}>
-              {theme === "light" ? "Switch to Dark" : "Switch to Light"}
-            </button>
-          </div>
-        </header>
-        <div className="controls-copy">
-          <p>Filters, toggles, and helper controls for the active view go here.</p>
-          <p>Hover over a section to see more detail.</p>
-        </div>
-      </main>
 
       <section className="view-column glass-panel glass-panel-view">
         <header className="topbar topbar-green">
