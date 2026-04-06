@@ -139,9 +139,42 @@ class DashboardService:
                 },
                 prefix="meta",
             ),
-            personal_rows=self._collect_keyword_rows(sources, ("name", "full_name", "display_name", "email", "phone", "mobile", "dob", "address", "postcode", "gender")),
-            medical_rows=self._collect_keyword_rows(sources, ("medical", "health", "medication", "condition", "allergy", "fitness", "dietary", "doctor")),
-            emergency_rows=self._collect_keyword_rows(sources, ("emergency", "emergency_contact", "next_of_kin", "contact_person", "contact_name", "contact_phone")),
+            personal_rows=self._build_attendee_profile_rows(
+                sources,
+                "personal",
+                (
+                    ("Email", ("email", "email_address")),
+                    ("Phone", ("phone", "mobile", "telephone", "phone_number")),
+                    ("Date Of Birth", ("dob", "date_of_birth", "birth_date")),
+                    ("Address", ("address", "address_line_1", "address1")),
+                    ("Postcode", ("postcode", "postal_code", "zip")),
+                    ("Gender", ("gender", "c_gender")),
+                ),
+            ),
+            medical_rows=self._build_attendee_profile_rows(
+                sources,
+                "medical",
+                (
+                    ("Medical Notes", ("medical", "medical_notes", "medical_information")),
+                    ("Health Notes", ("health", "health_notes")),
+                    ("Medication", ("medication", "medications")),
+                    ("Condition", ("condition", "conditions")),
+                    ("Allergy", ("allergy", "allergies")),
+                    ("Dietary", ("dietary", "dietary_requirements")),
+                    ("Doctor", ("doctor", "doctor_name", "gp")),
+                ),
+            ),
+            emergency_rows=self._build_attendee_profile_rows(
+                sources,
+                "emergency",
+                (
+                    ("Contact Name", ("emergency_contact_name", "contact_name", "next_of_kin_name", "contact_person")),
+                    ("Relationship", ("relationship", "emergency_contact_relationship", "next_of_kin_relationship")),
+                    ("Phone", ("emergency_contact_phone", "contact_phone", "next_of_kin_phone", "phone")),
+                    ("Email", ("emergency_contact_email", "contact_email", "next_of_kin_email", "email")),
+                    ("Address", ("emergency_contact_address", "contact_address", "next_of_kin_address", "address")),
+                ),
+            ),
         )
 
     def get_funder_detail(
@@ -998,6 +1031,79 @@ class DashboardService:
                     seen.add(identity)
                     rows.append(DashboardDetailRow(id=f"{label}-{len(rows)}", label=label, value=str(value)))
         return rows
+
+    def _build_attendee_profile_rows(
+        self,
+        sources: list[dict[str, Any]],
+        prefix: str,
+        field_map: tuple[tuple[str, tuple[str, ...]], ...],
+    ) -> list[DashboardDetailRow]:
+        rows: list[DashboardDetailRow] = []
+        for index, record in enumerate(sources):
+            attendee_name = self._first_nested_value(
+                record,
+                "name",
+                "full_name",
+                "display_name",
+                "participant_name",
+                "attendee_name",
+                "person_name",
+                "email",
+                "person_id",
+            )
+            attendee_label = str(attendee_name or f"Attendee {index + 1}").strip()
+            metadata: dict[str, str] = {}
+            for display_label, keys in field_map:
+                value = self._first_nested_value(record, *keys)
+                if value in (None, "", [], {}):
+                    continue
+                metadata[display_label] = self._stringify_detail_value(value)
+            if not metadata:
+                continue
+            primary_label = next(iter(metadata))
+            primary_value = metadata.pop(primary_label)
+            rows.append(
+                DashboardDetailRow(
+                    id=f"{prefix}-{index}",
+                    label=attendee_label,
+                    value=f"{primary_label}: {primary_value}",
+                    metadata=metadata,
+                )
+            )
+        return rows
+
+    def _first_nested_value(self, value: Any, *keys: str) -> Any:
+        wanted = {self._norm_key(key) for key in keys}
+
+        def walk(node: Any) -> Any:
+            if isinstance(node, dict):
+                for key, nested in node.items():
+                    if self._norm_key(key) in wanted and nested not in (None, "", [], {}):
+                        return nested
+                for nested in node.values():
+                    found = walk(nested)
+                    if found not in (None, "", [], {}):
+                        return found
+            elif isinstance(node, list):
+                for item in node:
+                    found = walk(item)
+                    if found not in (None, "", [], {}):
+                        return found
+            return None
+
+        return walk(value)
+
+    def _stringify_detail_value(self, value: Any) -> str:
+        if isinstance(value, list):
+            return ", ".join(self._stringify_detail_value(item) for item in value if item not in (None, "", [], {})) or "Not provided"
+        if isinstance(value, dict):
+            parts = []
+            for key, nested in value.items():
+                if nested in (None, "", [], {}):
+                    continue
+                parts.append(f"{self._pretty_field_name(str(key))}: {self._stringify_detail_value(nested)}")
+            return "; ".join(parts) or "Not provided"
+        return str(value)
 
     def _month_bucket(self, value: Any) -> str | None:
         if not value:

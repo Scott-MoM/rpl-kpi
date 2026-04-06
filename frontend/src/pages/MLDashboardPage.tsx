@@ -14,6 +14,39 @@ type DashboardDetailRow = { id: string; label: string; date?: string | null; reg
 type DashboardDetailPayload = { section: string; region: string; timeframe: string; rows: DashboardDetailRow[] };
 type MLEventDetailPayload = { event_id: string; label: string; date?: string | null; region?: string | null; event_type?: string | null; participants: number; metadata: DashboardDetailRow[]; personal_rows: DashboardDetailRow[]; medical_rows: DashboardDetailRow[]; emergency_rows: DashboardDetailRow[] };
 
+function renderAttendeeTable(rows: DashboardDetailRow[], emptyMessage: string) {
+  if (!rows.length) {
+    return <p className="status-panel">{emptyMessage}</p>;
+  }
+  return (
+    <div className="table-card">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Attendee</th>
+            <th>Primary Detail</th>
+            <th>Additional Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id}>
+              <td>{row.label}</td>
+              <td>{row.value ?? ""}</td>
+              <td>
+                {Object.entries(row.metadata ?? {})
+                  .filter(([, value]) => value !== null && value !== "")
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join(" | ") || "None recorded"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 export function MLDashboardPage() {
   const [detailsEnabled, setDetailsEnabled] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
@@ -135,9 +168,9 @@ export function MLDashboardPage() {
           {eventDetail ? (
             <>
               <CollapsibleSection badge="Event" title="Selected event" defaultOpen><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.metadata.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
-              <CollapsibleSection badge="Personal" title="Personal information"><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.personal_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
-              <CollapsibleSection badge="Medical" title="Medical information"><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.medical_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
-              <CollapsibleSection badge="Contacts" title="Emergency contacts"><div className="table-card"><table className="data-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>{eventDetail.emergency_rows.map((row) => <tr key={row.id}><td>{row.label}</td><td>{row.value ?? ""}</td></tr>)}</tbody></table></div></CollapsibleSection>
+              <CollapsibleSection badge="Personal" title="Personal information">{renderAttendeeTable(eventDetail.personal_rows, "No personal details recorded for this event.")}</CollapsibleSection>
+              <CollapsibleSection badge="Medical" title="Medical information">{renderAttendeeTable(eventDetail.medical_rows, "No medical details recorded for this event.")}</CollapsibleSection>
+              <CollapsibleSection badge="Contacts" title="Emergency contacts">{renderAttendeeTable(eventDetail.emergency_rows, "No emergency contacts recorded for this event.")}</CollapsibleSection>
             </>
           ) : null}
         </div>
